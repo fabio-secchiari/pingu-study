@@ -44,10 +44,10 @@ REGOLE SUI CAMPI
 - "color": scegli "blue" se non hai motivo di scegliere "pink".
 - "type": deve essere ESATTAMENTE uno tra: "definizione", "teorema", "proprieta", "corollario" (minuscolo, senza accenti). Mappa così:
     * Definizione / Definizioni → "definizione"
-    * Teorema / Teoremi / Lemma / Lemmi → "teorema"
-    * Proprietà / Proprieta → "proprieta"
+    * Teorema / Teoremi / Lemma / Lemmi / Postulato / Assioma / Proposizione → "teorema"
+    * Proprietà / Proprieta / Osservazione / Nota → "proprieta"
     * Corollario / Corollari → "corollario"
-    * Assioma, Postulato, Nota, Osservazione, Esempio → NON importarli, scartali.
+    * Esempio → NON importarlo, scartalo.
 - "title": stringa breve (max ~80 caratteri), senza "Definizione di", "Teorema di" ecc. ripetuti se già impliciti.
 - "description": l'enunciato completo (ipotesi + tesi per i teoremi; la definizione completa per le definizioni). Se il PDF contiene più paragrafi, uniscili in un'unica stringa separando con \\n\\n.
 - "needsProof": metti true SOLO se il PDF contiene effettivamente la dimostrazione di quell'elemento (tipicamente introdotta da "Dimostrazione", "Dim.", "Proof", "Dimostriamo che..."). Altrimenti false.
