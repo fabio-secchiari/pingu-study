@@ -17,3 +17,5 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
   -webkit-tap-highlight-color: transparent;
 }
+
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; }

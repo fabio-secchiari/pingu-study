@@ -81,3 +81,70 @@ export const BackupSchema = z.object({
 });
 
 export type Backup = z.infer<typeof BackupSchema>;
+
+/** Comandi LaTeX che iniziano per "n": `\n` seguito da uno di questi non è un a capo. */
+const LATEX_N_COMMANDS = new Set([
+  'ne', 'neq', 'neg', 'nabla', 'nu', 'not', 'notin', 'ni', 'nexists', 'nmid',
+  'nleq', 'ngeq', 'nless', 'ngtr', 'nsubseteq', 'nsupseteq', 'newline',
+  'natural', 'nearrow', 'nwarrow', 'nRightarrow', 'nLeftrightarrow', 'nrightarrow',
+  'nleftrightarrow', 'nparallel', 'nsim', 'ncong', 'normalsize', 'noindent',
+]);
+
+/**
+ * Ripara i backslash dentro le stringhe JSON prodotte da un LLM con LaTeX non escapato.
+ * - Mantiene gli escape JSON legittimi: `\\`, `\"`, `\/`, `\uXXXX`, e `\n` usato come a capo.
+ * - `\b \f \r \t` seguiti da una lettera sono comandi LaTeX (`\beta`, `\frac`, `\rightarrow`, `\times`).
+ * - Tutti gli altri backslash (`\{`, `\,`, `\mathcal`, `\in`, ...) vengono raddoppiati.
+ * È idempotente su JSON già corretto (salvo il caso, irrilevante qui, di un tab seguito da una lettera).
+ */
+export function repairJsonBackslashes(input: string): string {
+  let out = '';
+  let inString = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      continue;
+    }
+    if (ch === '"') {
+      inString = false;
+      out += ch;
+      continue;
+    }
+    if (ch !== '\\') {
+      out += ch;
+      continue;
+    }
+
+    const next = input[i + 1] ?? '';
+    if (next === '\\' || next === '"' || next === '/') {
+      out += ch + next;
+      i++;
+    } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(input.slice(i + 2, i + 6))) {
+      out += input.slice(i, i + 6);
+      i += 5;
+    } else if (next === 'n') {
+      const word = /^[A-Za-z]*/.exec(input.slice(i + 1))![0];
+      out += LATEX_N_COMMANDS.has(word) ? '\\\\' : '\\';
+    } else if (next !== '' && 'bfrt'.includes(next)) {
+      out += /[A-Za-z]/.test(input[i + 2] ?? '') ? '\\\\' : '\\';
+    } else {
+      out += '\\\\';
+    }
+  }
+  return out;
+}
+
+/**
+ * Parse "tollerante" per JSON generati da LLM.
+ * La riparazione va applicata sempre: un JSON con solo `\rightarrow`, `\forall`, `\ne`...
+ * è sintatticamente valido ma `JSON.parse` li trasformerebbe in caratteri di controllo.
+ */
+export function parseJsonLoose<T = unknown>(text: string): T {
+  try {
+    return JSON.parse(repairJsonBackslashes(text)) as T;
+  } catch {
+    return JSON.parse(text) as T;
+  }
+}

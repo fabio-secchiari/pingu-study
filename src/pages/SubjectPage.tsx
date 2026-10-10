@@ -5,6 +5,8 @@ import { db } from '../db';
 import ItemModal from '../components/ItemModal';
 import { TYPE_COLORS, TYPE_LABELS, TYPE_VALUES, uid, type Item, type ItemType } from '../types';
 import { importFromLLM } from '../lib/backup';
+import { parseJsonLoose } from '../lib/schema';
+import MathText from '../components/MathText';
 
 export default function SubjectPage() {
   const { id = '' } = useParams();
@@ -51,7 +53,7 @@ export default function SubjectPage() {
 
   const handleImport = async (file: File) => {
     try {
-      const raw = JSON.parse(await file.text());
+      const raw = parseJsonLoose(await file.text());
       await importFromLLM(raw);
       alert('Import completato.');
     } catch (e: any) {
@@ -176,9 +178,11 @@ export default function SubjectPage() {
                             </span>
                           )}
                         </div>
-                        <p className="font-medium truncate">{it.title}</p>
+                        <MathText as="p" className="font-medium truncate">{it.title}</MathText>
                         {it.description && (
-                          <p className="text-xs text-ink/60 line-clamp-2 mt-0.5">{it.description}</p>
+                          <MathText as="p" className="text-xs text-ink/60 line-clamp-2 mt-0.5">
+                            {it.description}
+                          </MathText>
                         )}
                       </button>
                     </li>

@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { db } from '../db';
-import { downloadJson, exportBackup, importBackup } from '../lib/backup';
+import { downloadJson, exportBackup, importBackup, importFromLLM } from '../lib/backup';
+import { BackupSchema, LLMImportSchema, parseJsonLoose } from '../lib/schema';
 
 export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -13,12 +14,19 @@ export default function SettingsPage() {
 
   const importAll = async (file: File) => {
     try {
-      const raw = JSON.parse(await file.text());
-      if (!confirm('Importare il backup? Verranno SOSTITUITI tutti i dati attuali.')) return;
-      await importBackup(raw);
-      alert('Backup importato correttamente.');
+        const raw = parseJsonLoose(await file.text());
+        // File in formato LLM (senza id/timestamp): si aggiunge ai dati esistenti.
+        if (!BackupSchema.safeParse(raw).success && LLMImportSchema.safeParse(raw).success) {
+          if (!confirm('Il file è in formato LLM: le materie verranno AGGIUNTE a quelle esistenti. Procedere?')) return;
+          await importFromLLM(raw);
+          alert('Import completato.');
+          return;
+        }
+        if (!confirm('Importare il backup? Verranno SOSTITUITI tutti i dati attuali.')) return;
+        await importBackup(raw);
+        alert('Backup importato correttamente.');
     } catch (e: any) {
-      alert('Errore di import: ' + (e?.message ?? e));
+        alert('Errore di import: ' + (e?.message ?? e));
     }
   };
 

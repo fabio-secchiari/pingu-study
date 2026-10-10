@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { db } from '../db';
 import { TYPE_COLORS, TYPE_LABELS, TYPE_VALUES, uid, type Item, type ItemType } from '../types';
 import { useLiveQuery } from 'dexie-react-hooks';
+import MathText from './MathText';
 
 interface Props {
   subjectId: string;
@@ -37,6 +38,12 @@ export default function ItemModal({ subjectId, chapterId, item, onClose }: Props
     [item?.id]
   );
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const save = async () => {
     const payload = { ...draft, proofText };
     if (isNew) await db.items.add(payload);
@@ -66,24 +73,28 @@ export default function ItemModal({ subjectId, chapterId, item, onClose }: Props
 
   return (
     <div className="fixed inset-0 z-40 flex items-stretch sm:items-center justify-center bg-ink/40 backdrop-blur-sm p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-2xl sm:rounded-3xl shadow-xl overflow-y-auto">
-        <div className="p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <select
-              value={draft.type}
-              onChange={(e) => setDraft({ ...draft, type: e.target.value as ItemType })}
-              className={`px-3 py-2 rounded-xl border text-sm font-semibold ${TYPE_COLORS[draft.type]}`}
-            >
-              {TYPE_VALUES.map((t) => (
-                <option key={t} value={t}>
-                  {TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
-            <button onClick={onClose} className="text-ink/50 hover:text-ink text-2xl leading-none">
-              ×
-            </button>
-          </div>
+      <div className="bg-white w-full max-h-full sm:max-w-2xl sm:rounded-3xl shadow-xl overflow-y-auto">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 sm:px-6 pt-5 sm:pt-6 pb-3 bg-white">
+          <select
+            value={draft.type}
+            onChange={(e) => setDraft({ ...draft, type: e.target.value as ItemType })}
+            className={`px-3 py-2 rounded-xl border text-sm font-semibold ${TYPE_COLORS[draft.type]}`}
+          >
+            {TYPE_VALUES.map((t) => (
+              <option key={t} value={t}>
+                {TYPE_LABELS[t]}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={onClose}
+            aria-label="Chiudi"
+            className="w-10 h-10 -mr-2 rounded-full text-ink/50 hover:text-ink hover:bg-ink/5 text-2xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+        <div className="px-5 sm:px-6 pb-5 sm:pb-6 space-y-4">
 
           <input
             value={draft.title}
@@ -99,6 +110,11 @@ export default function ItemModal({ subjectId, chapterId, item, onClose }: Props
             rows={4}
             className="w-full px-4 py-3 rounded-2xl bg-white border border-penguin-blue-soft focus:outline-none focus:ring-2 focus:ring-penguin-blue resize-none"
           />
+          {draft.description && (
+            <div className="p-3 rounded-2xl bg-penguin-blue-soft/40 border border-penguin-blue-soft text-sm">
+                <MathText as="div">{draft.description}</MathText>
+            </div>
+            )}
 
           <label className="flex items-center gap-3 select-none cursor-pointer">
             <input
@@ -119,6 +135,11 @@ export default function ItemModal({ subjectId, chapterId, item, onClose }: Props
                 rows={5}
                 className="w-full px-3 py-2 rounded-xl bg-white border border-penguin-pink/40 focus:outline-none focus:ring-2 focus:ring-penguin-pink resize-none"
               />
+              {proofText && (
+                <div className="p-3 rounded-2xl bg-white border border-penguin-pink/40 text-sm">
+                    <MathText as="div">{proofText}</MathText>
+                </div>
+                )}
 
               <div>
                 <label className="block text-sm font-medium mb-2">
