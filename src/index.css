@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-penguin-blue: #7BB8E8;
+  --color-penguin-blue-dark: #5A9BD4;
+  --color-penguin-blue-soft: #E3F0FB;
+  --color-penguin-pink: #F8BBD0;
+  --color-penguin-pink-dark: #EC7FA9;
+  --color-penguin-pink-soft: #FDEBF2;
+  --color-ink: #1B2430;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: linear-gradient(160deg, #E3F0FB 0%, #FDEBF2 100%);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
+  -webkit-tap-highlight-color: transparent;
+}
