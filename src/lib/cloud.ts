@@ -151,15 +151,17 @@ export async function ensureProfile(userId: string, email?: string) {
  */
 export async function reconcileWithIgloo(realmId: string, me: string) {
   if (!realmId || !me || me === UNAUTHORIZED) return 0;
+  // Solo ciò che sta nello spazio privato: mai spostare dati già in un altro realm condiviso.
+  const isPrivate = (r?: string) => !r || r === me;
   return db.transaction('rw', [db.profiles, db.sessions, db.notes, db.igloo], async () => {
     let moved = 0;
-    moved += await db.profiles.filter((p) => p.userId === me && p.realmId !== realmId).modify({ realmId });
-    moved += await db.sessions.filter((x) => x.userId === me && x.realmId !== realmId).modify({ realmId });
-    moved += await db.notes.filter((n) => n.fromUserId === me && n.realmId !== realmId).modify({ realmId });
+    moved += await db.profiles.filter((p) => p.userId === me && isPrivate(p.realmId)).modify({ realmId });
+    moved += await db.sessions.filter((x) => x.userId === me && isPrivate(x.realmId)).modify({ realmId });
+    moved += await db.notes.filter((n) => n.fromUserId === me && isPrivate(n.realmId)).modify({ realmId });
     // Impostazioni del pinguino: se nell'igloo non ce ne sono ancora, ci porto le mie.
     const all = await db.igloo.toArray();
     if (!all.some((r) => r.realmId === realmId)) {
-      const mine = all.find((r) => !r.owner || r.owner === me);
+      const mine = all.find((r) => (!r.owner || r.owner === me) && isPrivate(r.realmId));
       if (mine) {
         await db.igloo.update(mine.id, { realmId });
         moved++;
@@ -174,10 +176,11 @@ export function useMisplacedCount(realmId: string | undefined, me: string): numb
   return (
     useLiveQuery(async () => {
       if (!realmId || me === UNAUTHORIZED) return 0;
+      const priv = (r?: string) => !r || r === me;
       const [p, s, n] = await Promise.all([
-        db.profiles.filter((x) => x.userId === me && x.realmId !== realmId).count(),
-        db.sessions.filter((x) => x.userId === me && x.realmId !== realmId).count(),
-        db.notes.filter((x) => x.fromUserId === me && x.realmId !== realmId).count(),
+        db.profiles.filter((x) => x.userId === me && priv(x.realmId)).count(),
+        db.sessions.filter((x) => x.userId === me && priv(x.realmId)).count(),
+        db.notes.filter((x) => x.fromUserId === me && priv(x.realmId)).count(),
       ]);
       return p + s + n;
     }, [realmId, me]) ?? 0
