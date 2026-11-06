@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { db } from '../db';
 import { downloadJson, exportBackup, importBackup } from '../lib/backup';
 import { parseJsonLoose } from '../lib/schema';
+import { useCurrentUser } from '../lib/cloud';
 
 const LLM_PROMPT = `Sei un assistente che estrae contenuti matematici da appunti/dispense PDF e li converte in un JSON rigorosamente conforme allo schema qui sotto.
 
@@ -77,6 +78,7 @@ Ora leggi il PDF che ti allego e produci l'output.`;
 export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const user = useCurrentUser();
 
   const exportAll = async () => {
     const backup = await exportBackup();
@@ -87,16 +89,20 @@ export default function SettingsPage() {
   const importAll = async (file: File) => {
     try {
       const raw = parseJsonLoose(await file.text());
-      if (!confirm('Importare il backup? Verranno SOSTITUITI tutti i dati attuali.')) return;
-      await importBackup(raw);
-      alert('Backup importato correttamente.');
+      if (!confirm('Importare il backup? Gli elementi già presenti (stesso id) verranno aggiornati, quelli nuovi aggiunti. Nulla viene cancellato.')) return;
+      await importBackup(raw, { wipe: false });
+      alert('Backup importato.');
     } catch (e: any) {
       alert('Errore di import: ' + (e?.message ?? e));
     }
   };
 
   const wipe = async () => {
-    if (!confirm('Cancellare TUTTI i dati? Operazione irreversibile.')) return;
+    const msg = user?.isLoggedIn
+      ? "Cancellare TUTTI i dati? Sei connesso: verranno cancellati anche dal cloud e dall'igloo condiviso, quindi spariranno anche dagli altri dispositivi e per la tua metà. Operazione irreversibile."
+      : 'Cancellare TUTTI i dati su questo dispositivo? Operazione irreversibile.';
+    if (!confirm(msg)) return;
+    if (!confirm('Sicuro sicuro? Ti consiglio di esportare un backup prima.')) return;
     await Promise.all([
       db.subjects.clear(),
       db.chapters.clear(),
@@ -136,9 +142,40 @@ export default function SettingsPage() {
       <h2 className="text-2xl font-bold">Impostazioni</h2>
 
       <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
+        <h3 className="font-semibold">Account e sincronizzazione</h3>
+        {user?.isLoggedIn ? (
+          <>
+            <p className="text-sm text-ink/60">
+              Connesso come <b>{user.email}</b>. I dati si sincronizzano su tutti i dispositivi in cui accedi e
+              restano disponibili anche offline.
+            </p>
+            <button
+              onClick={() => db.cloud.logout()}
+              className="px-4 py-2.5 rounded-2xl bg-white border border-penguin-blue-soft font-medium hover:bg-penguin-blue-soft"
+            >
+              Esci
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-ink/60">
+              Accedi con la tua email (ti arriva un codice, niente password) per avere gli stessi dati su iPad e
+              computer. Quello che hai già in questo dispositivo viene caricato al primo accesso.
+            </p>
+            <button
+              onClick={() => db.cloud.login()}
+              className="px-4 py-2.5 rounded-2xl bg-penguin-blue text-white font-medium hover:bg-penguin-blue-dark"
+            >
+              Accedi
+            </button>
+          </>
+        )}
+      </section>
+
+      <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
         <h3 className="font-semibold">Backup completo</h3>
         <p className="text-sm text-ink/60">
-          Esporta/importa tutto (materie, capitoli, elementi e foto).
+          Esporta/importa tutto (materie, capitoli, elementi, stato di studio e foto). L'import aggiunge e aggiorna, non cancella.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -216,7 +253,9 @@ export default function SettingsPage() {
 
       <section className="p-5 rounded-3xl bg-white/85 border border-red-200 space-y-3">
         <h3 className="font-semibold text-red-700">Zona pericolosa</h3>
-        <p className="text-sm text-ink/60">Cancella tutti i dati memorizzati in questo dispositivo.</p>
+        <p className="text-sm text-ink/60">
+          Cancella tutti i dati.{user?.isLoggedIn ? " Da connesso la cancellazione arriva anche al cloud e all'igloo condiviso." : ''}
+        </p>
         <button
           onClick={wipe}
           className="px-4 py-2.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 font-medium hover:bg-red-100"

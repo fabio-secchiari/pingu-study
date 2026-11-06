@@ -56,6 +56,12 @@ const BackupItemSchema = z.object({
   needsProof: z.boolean().default(false),
   proofText: z.string().optional(),
   createdAt: z.number(),
+  order: z.number().optional(),
+  status: z.enum(['da-studiare', 'ripassato', 'padroneggiato']).optional(),
+  dueAt: z.number().optional(),
+  intervalDays: z.number().optional(),
+  ease: z.number().optional(),
+  reviews: z.number().optional(),
   proofImages: z.array(BackupImageSchema).default([]),
 });
 
@@ -71,6 +77,9 @@ const BackupSubjectSchema = z.object({
   name: z.string(),
   color: z.string().default('blue'),
   createdAt: z.number(),
+  examDate: z.string().optional(),
+  examPassed: z.boolean().optional(),
+  examGrade: z.string().optional(),
   chapters: z.array(BackupChapterSchema).default([]),
 });
 

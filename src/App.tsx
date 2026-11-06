@@ -4,6 +4,9 @@ import SubjectsPage from './pages/SubjectsPage';
 import SubjectPage from './pages/SubjectPage';
 import PomodoroPage from './pages/PomodoroPage';
 import SettingsPage from './pages/SettingsPage';
+import ReviewPage from './pages/ReviewPage';
+import PrintPage from './pages/PrintPage';
+import IglooPage from './pages/IglooPage';
 
 export default function App() {
   return (
@@ -12,6 +15,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SubjectsPage />} />
           <Route path="/subject/:id" element={<SubjectPage />} />
+          <Route path="/ripasso/:id" element={<ReviewPage />} />
+          <Route path="/stampa/:id" element={<PrintPage />} />
+          <Route path="/igloo" element={<IglooPage />} />
           <Route path="/pomodoro" element={<PomodoroPage />} />
           <Route path="/impostazioni" element={<SettingsPage />} />
         </Routes>
