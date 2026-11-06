@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { BackupSchema, type Backup } from './schema';
 import { uid } from '../types';
+import { realmPatch } from './cloud';
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((res, rej) => {
@@ -35,6 +36,9 @@ export async function exportBackup(): Promise<Backup> {
         name: s.name,
         color: s.color,
         createdAt: s.createdAt,
+        examDate: s.examDate,
+        examPassed: s.examPassed,
+        examGrade: s.examGrade,
         chapters: await Promise.all(
           chapters
             .filter((c) => c.subjectId === s.id)
@@ -54,6 +58,12 @@ export async function exportBackup(): Promise<Backup> {
                     needsProof: i.needsProof,
                     proofText: i.proofText,
                     createdAt: i.createdAt,
+                    order: i.order,
+                    status: i.status,
+                    dueAt: i.dueAt,
+                    intervalDays: i.intervalDays,
+                    ease: i.ease,
+                    reviews: i.reviews,
                     proofImages: await Promise.all(
                       images
                         .filter((img) => img.itemId === i.id)
@@ -102,6 +112,10 @@ export async function importBackup(raw: unknown, { wipe = true } = {}) {
         name: s.name,
         color: s.color ?? 'blue',
         createdAt: s.createdAt,
+        examDate: s.examDate,
+        examPassed: s.examPassed,
+        examGrade: s.examGrade,
+        ...realmPatch(),
       });
       for (const c of s.chapters) {
         await db.chapters.put({
@@ -109,6 +123,7 @@ export async function importBackup(raw: unknown, { wipe = true } = {}) {
           subjectId: s.id,
           title: c.title,
           order: c.order,
+          ...realmPatch(),
         });
         for (const i of c.items) {
           await db.items.put({
@@ -121,6 +136,13 @@ export async function importBackup(raw: unknown, { wipe = true } = {}) {
             needsProof: i.needsProof,
             proofText: i.proofText,
             createdAt: i.createdAt,
+            order: i.order,
+            status: i.status,
+            dueAt: i.dueAt,
+            intervalDays: i.intervalDays,
+            ease: i.ease,
+            reviews: i.reviews,
+            ...realmPatch(),
           });
           for (const img of i.proofImages) {
             await db.proofImages.put({
@@ -128,6 +150,7 @@ export async function importBackup(raw: unknown, { wipe = true } = {}) {
               itemId: i.id,
               createdAt: img.createdAt,
               blob: dataUrlToBlob(img.dataUrl),
+              ...realmPatch(),
             });
           }
         }
@@ -148,9 +171,11 @@ export async function importFromLLM(raw: unknown) {
         name: s.name,
         color: s.color === 'pink' ? 'pink' : 'blue',
         createdAt: Date.now(),
+        ...realmPatch(),
       });
 
       let order = 0;
+      let itemOrder = 0;
       for (const c of s.chapters) {
         const chapterId = uid();
         await db.chapters.add({
@@ -158,6 +183,7 @@ export async function importFromLLM(raw: unknown) {
           subjectId,
           title: c.title,
           order: order++,
+          ...realmPatch(),
         });
         for (const i of c.items) {
           await db.items.add({
@@ -170,6 +196,9 @@ export async function importFromLLM(raw: unknown) {
             needsProof: i.needsProof,
             proofText: i.proofText,
             createdAt: Date.now(),
+            order: itemOrder++,
+            status: 'da-studiare',
+            ...realmPatch(),
           });
         }
       }
