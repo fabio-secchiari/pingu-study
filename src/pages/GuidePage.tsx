@@ -177,6 +177,10 @@ export default function GuidePage() {
             padroneggiato, e "solo con dimostrazione".
           </li>
           <li>
+            <b>Cambiare lo stato al volo:</b> tasto destro su una scheda (su iPad tocca il pallino colorato) e scegli 🔴 da
+            studiare, 🟡 ripassato o 🟢 padroneggiato.
+          </li>
+          <li>
             <b>Data d'esame:</b> tocca "📅 Imposta la data d'esame" sotto il nome. Il giorno dell'esame il pinguino ti fa
             il tifo, e con "Passato! 🎉" partono i coriandoli.
           </li>

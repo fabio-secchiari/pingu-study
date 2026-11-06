@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
@@ -44,6 +44,7 @@ import { statusOf } from '../lib/srs';
 import { realmPatch } from '../lib/cloud';
 import { celebrate } from '../components/Celebration';
 import Penguin from '../components/Penguin';
+import StatusMenu from '../components/StatusMenu';
 
 type SortMode = 'manuale' | 'az' | 'za' | 'recenti' | 'vecchi';
 const SORT_LABELS: Record<SortMode, string> = {
@@ -90,7 +91,17 @@ function ProgressBar({ items, className = '' }: { items: Item[]; className?: str
   );
 }
 
-function ItemCard({ item, onOpen, sortable }: { item: Item; onOpen: () => void; sortable: boolean }) {
+function ItemCard({
+  item,
+  onOpen,
+  onMenu,
+  sortable,
+}: {
+  item: Item;
+  onOpen: () => void;
+  onMenu: (x: number, y: number) => void;
+  sortable: boolean;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     disabled: !sortable,
@@ -99,12 +110,16 @@ function ItemCard({ item, onOpen, sortable }: { item: Item; onOpen: () => void; 
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
-      className={isDragging ? 'opacity-80' : ''}
+      className={`relative ${isDragging ? 'opacity-80' : ''}`}
     >
       <button
         {...(sortable ? attributes : {})}
         {...(sortable ? listeners : {})}
         onClick={onOpen}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          onMenu(e.clientX, e.clientY);
+        }}
         className={`w-full text-left p-3 rounded-2xl bg-white border border-penguin-blue-soft hover:shadow-sm transition ${
           sortable ? 'touch-manipulation cursor-grab active:cursor-grabbing' : ''
         } ${isDragging ? 'shadow-lg ring-2 ring-penguin-blue' : ''}`}
@@ -132,6 +147,17 @@ function ItemCard({ item, onOpen, sortable }: { item: Item; onOpen: () => void; 
           </div>
         )}
       </button>
+      {/* Il pallino apre lo stesso menu: utile su iPad, dove non c'è il tasto destro */}
+      <button
+        type="button"
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          onMenu(r.left, r.bottom + 4);
+        }}
+        className="absolute left-1.5 top-1.5 w-7 h-7 rounded-full hover:bg-ink/5"
+        aria-label={`Stato: ${STATUS_LABELS[statusOf(item)]}. Cambia stato`}
+        title="Cambia stato di studio"
+      />
     </li>
   );
 }
@@ -145,6 +171,7 @@ function ChapterSection({
   onDelete,
   onRename,
   onReorder,
+  onMenu,
 }: {
   chapter: Chapter;
   items: Item[];
@@ -154,6 +181,7 @@ function ChapterSection({
   onDelete: () => void;
   onRename: (t: string) => void;
   onReorder: (ids: string[]) => void;
+  onMenu: (it: Item, x: number, y: number) => void;
 }) {
   const sort = useSortable({ id: 'ch-' + chapter.id, disabled: !sortable });
   const sensors = useSensors(
@@ -216,7 +244,13 @@ function ChapterSection({
           <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
             <ul className="grid gap-2 sm:grid-cols-2">
               {items.map((it) => (
-                <ItemCard key={it.id} item={it} sortable={sortable} onOpen={() => onOpen(it)} />
+                <ItemCard
+                  key={it.id}
+                  item={it}
+                  sortable={sortable}
+                  onOpen={() => onOpen(it)}
+                  onMenu={(x, y) => onMenu(it, x, y)}
+                />
               ))}
             </ul>
           </SortableContext>
@@ -238,6 +272,8 @@ export default function SubjectPage() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = usePersisted<SortMode>(`penguin-sort-${id}`, 'manuale');
   const [editExam, setEditExam] = useState(false);
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const subject = useLiveQuery(() => db.subjects.get(id), [id]);
@@ -548,7 +584,10 @@ export default function SubjectPage() {
           </p>
         )}
         {sortable && (items?.length ?? 0) > 1 && (
-          <p className="text-xs text-ink/40">Suggerimento: trascina le schede (tieni premuto su iPad) per riordinarle.</p>
+          <p className="text-xs text-ink/40">
+            Suggerimento: trascina le schede (tieni premuto su iPad) per riordinarle. Tasto destro su una scheda, o tocco
+            sul pallino colorato, per cambiarne lo stato.
+          </p>
         )}
       </div>
 
@@ -584,11 +623,25 @@ export default function SubjectPage() {
                 onDelete={() => deleteChapter(ch.id)}
                 onRename={(title) => db.chapters.update(ch.id, { title })}
                 onReorder={reorderItems}
+                onMenu={(it, x, y) => setMenu({ id: it.id, x, y })}
               />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+
+      {menu && items?.some((i) => i.id === menu.id) && (
+        <StatusMenu
+          item={items.find((i) => i.id === menu.id)!}
+          x={menu.x}
+          y={menu.y}
+          onClose={closeMenu}
+          onOpen={() => {
+            const it = items.find((i) => i.id === menu.id)!;
+            setModal({ chapterId: it.chapterId, item: it });
+          }}
+        />
+      )}
 
       {modal && (
         <ItemModal
