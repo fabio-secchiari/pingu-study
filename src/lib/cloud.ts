@@ -170,7 +170,7 @@ async function doEnsureProfile(userId: string, email?: string) {
     userId,
     name: name.charAt(0).toUpperCase() + name.slice(1),
     color: 'blue',
-    accessory: 'none',
+    cosmetics: {},
     ...realmPatch(),
   };
   await db.profiles.add(profile);

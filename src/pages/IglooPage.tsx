@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery, useObservable } from 'dexie-react-hooks';
 import { db } from '../db';
-import { ACCESSORIES, uid, type AccessoryId, type Profile } from '../types';
+import { COSMETICS, SLOT_LABELS, cosmeticsOf, uid, type CosmeticSlot, type Profile } from '../types';
 import Penguin from '../components/Penguin';
 import {
   createIgloo,
@@ -52,6 +52,7 @@ export default function IglooPage() {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [slot, setSlot] = useState<CosmeticSlot>('testa');
 
   const myFish = fishOf(sessions, me, igloo);
   const partnerFish = partner ? fishOf(sessions, partner.userId, igloo) : 0;
@@ -141,7 +142,7 @@ export default function IglooPage() {
             <StudyingBadge p={mine} />
             <Penguin
               color={mine?.color ?? 'blue'}
-              accessory={mine?.accessory ?? 'none'}
+              cosmetics={cosmeticsOf(mine)}
               mood={bothStudying ? 'love' : 'happy'}
               className="w-20 h-24 sm:w-28 sm:h-32"
               title={mine?.name ?? 'Tu'}
@@ -162,7 +163,7 @@ export default function IglooPage() {
                 <StudyingBadge p={partner} />
                 <Penguin
                   color={partner.color}
-                  accessory={partner.accessory}
+                  cosmetics={cosmeticsOf(partner)}
                   mood={bothStudying ? 'love' : 'happy'}
                   className="w-20 h-24 sm:w-28 sm:h-32"
                   title={partner.name}
@@ -258,22 +259,41 @@ export default function IglooPage() {
                   />
                 ))}
               </div>
-              <p className="text-xs text-ink/50">Accessori: si sbloccano con i pesciolini (1 pomodoro = 1 🐟)</p>
+              <div className="flex items-center gap-3">
+                <Penguin color={mine.color} cosmetics={cosmeticsOf(mine)} className="w-16 h-20 shrink-0" />
+                <p className="text-xs text-ink/50">
+                  Combina un cosmetico per ogni zona. Si sbloccano con i pesciolini (1 pomodoro = 1 🐟): ne hai{' '}
+                  <b>{myFish}</b>.
+                </p>
+              </div>
+              <div className="flex gap-1 rounded-full bg-penguin-blue-soft/60 p-0.5 text-xs w-fit">
+                {(Object.keys(SLOT_LABELS) as CosmeticSlot[]).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setSlot(k)}
+                    className={`px-3 py-1.5 rounded-full font-medium ${slot === k ? 'bg-white shadow-sm' : 'text-ink/60'}`}
+                  >
+                    {SLOT_LABELS[k]}
+                  </button>
+                ))}
+              </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {ACCESSORIES.map((a) => {
-                  const locked = myFish < a.fish;
+                {[{ id: undefined, label: 'Niente', fish: 0 }, ...COSMETICS.filter((c) => c.slot === slot)].map((c) => {
+                  const current = cosmeticsOf(mine);
+                  const locked = myFish < c.fish;
+                  const selected = current[slot] === c.id;
                   return (
                     <button
-                      key={a.id}
+                      key={c.id ?? 'none'}
                       disabled={locked}
-                      onClick={() => updateMine({ accessory: a.id as AccessoryId })}
+                      onClick={() => updateMine({ cosmetics: { ...current, [slot]: c.id }, accessory: undefined })}
                       className={`p-2 rounded-2xl border text-center ${
-                        mine.accessory === a.id ? 'border-penguin-blue bg-penguin-blue-soft' : 'border-ink/10 bg-white'
+                        selected ? 'border-penguin-blue bg-penguin-blue-soft' : 'border-ink/10 bg-white'
                       } ${locked ? 'opacity-40' : 'hover:bg-penguin-blue-soft/50'}`}
                     >
-                      <Penguin color={mine.color} accessory={a.id as AccessoryId} className="w-10 h-12 mx-auto" />
-                      <span className="block text-[11px] leading-tight mt-1">{a.label}</span>
-                      {locked && <span className="block text-[10px] text-ink/60">🔒 {a.fish} 🐟</span>}
+                      <Penguin color={mine.color} cosmetics={{ [slot]: c.id }} className="w-10 h-12 mx-auto" />
+                      <span className="block text-[11px] leading-tight mt-1">{c.label}</span>
+                      {locked && <span className="block text-[10px] text-ink/60">🔒 {c.fish} 🐟</span>}
                     </button>
                   );
                 })}

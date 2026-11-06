@@ -7,6 +7,8 @@ import LoginDialog from './LoginDialog';
 import NotePopup from './NotePopup';
 import Celebration from './Celebration';
 import Penguin from './Penguin';
+import { cosmeticsOf } from '../types';
+import PomodoroBar from './PomodoroBar';
 import {
   ensureProfile,
   reconcileWithIgloo,
@@ -111,7 +113,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </button>
             {user?.isLoggedIn ? (
               <Link to="/igloo" className="relative w-10 h-10 rounded-full bg-penguin-blue-soft flex items-center justify-center" title={user.email}>
-                <Penguin color={mine?.color ?? 'blue'} accessory={mine?.accessory ?? 'none'} className="w-7 h-8" />
+                <Penguin color={mine?.color ?? 'blue'} cosmetics={cosmeticsOf(mine)} className="w-7 h-8" />
                 <SyncDot />
               </Link>
             ) : (
@@ -124,6 +126,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             )}
           </div>
         </div>
+        <PomodoroBar />
         {special.length > 0 && (
           <Link to="/igloo" className="block text-center text-xs py-1 bg-penguin-pink-soft text-penguin-pink-dark font-medium">
             {special.map((s) => s.title).join(' · ')}

@@ -1,162 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { uid } from '../types';
 import Penguin from '../components/Penguin';
-import { realmPatch, useIgloo, useMyUserId, useProfiles } from '../lib/cloud';
+import { cosmeticsOf } from '../types';
+import { useIgloo, useMyUserId, useProfiles } from '../lib/cloud';
 import { fishOf, minutesBySubject } from '../lib/stats';
-import { notify, requestNotifications } from '../lib/notify';
+import { fmtClock, usePomodoro } from '../lib/pomodoro';
 import StudyCalendar from '../components/StudyCalendar';
 
-type Mode = 'work' | 'break';
-
-const LS_KEY = 'penguin-pomodoro';
-const SUBJ_KEY = 'penguin-pomodoro-subject';
-
-interface Cfg {
-  work: number;
-  brk: number;
-  sessions: number;
-}
-
-const defaults: Cfg = { work: 25, brk: 5, sessions: 0 };
-
 export default function PomodoroPage() {
-  const [cfg, setCfg] = useState<Cfg>(() => {
-    try {
-      return { ...defaults, ...JSON.parse(localStorage.getItem(LS_KEY) ?? '{}') };
-    } catch {
-      return defaults;
-    }
-  });
-  const [mode, setMode] = useState<Mode>('work');
-  const [running, setRunning] = useState(false);
-  const [remaining, setRemaining] = useState(cfg.work * 60);
-  const endRef = useRef<number | null>(null);
+  const pomo = usePomodoro();
+  const { mode, running, remaining, total, fishPop, subjectId } = pomo;
   const me = useMyUserId();
   const { mine, partner } = useProfiles();
   const igloo = useIgloo();
   const subjects = useLiveQuery(() => db.subjects.orderBy('name').toArray(), []) ?? [];
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
-  const [subjectId, setSubjectId] = useState<string>(() => {
-    try {
-      return localStorage.getItem(SUBJ_KEY) ?? '';
-    } catch {
-      return '';
-    }
-  });
-  const [fishPop, setFishPop] = useState(0);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(SUBJ_KEY, subjectId);
-    } catch {
-      /* ignore */
-    }
-  }, [subjectId]);
-
-  /** Fa sapere all'altra persona che stai studiando (per lo "studiamo insieme"). */
-  const setPresence = (until: number | undefined) => {
-    if (!mine) return;
-    db.profiles.update(mine.id, { studyingUntil: until, studyingSubject: until ? subjectId || undefined : undefined });
-  };
-
-  const logPomodoro = async () => {
-    const subj = subjects.find((x) => x.id === subjectId);
-    await db.sessions.add({
-      id: uid(),
-      userId: me,
-      kind: 'pomodoro',
-      subjectId: subjectId || undefined,
-      minutes: cfg.work,
-      endedAt: Date.now(),
-      ...realmPatch(subj?.realmId),
-    });
-    setFishPop((n) => n + 1);
-  };
-  const tickRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(cfg));
-  }, [cfg]);
-
-  const total = (mode === 'work' ? cfg.work : cfg.brk) * 60;
-
-  const beep = () => {
-    try {
-      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
-      const ctx = new Ctx();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.frequency.value = 880;
-      g.gain.setValueAtTime(0.25, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-      o.start();
-      o.stop(ctx.currentTime + 1.2);
-    } catch {}
-  };
-
-
-
-  const switchMode = () => {
-    beep();
-    if (mode === 'work') {
-      notify('Pomodoro completato!', 'Hai guadagnato un pesciolino 🐟 Tempo di pausa 🐧');
-      setCfg((c) => ({ ...c, sessions: c.sessions + 1 }));
-      logPomodoro();
-      setPresence(undefined);
-      setMode('break');
-      setRemaining(cfg.brk * 60);
-    } else {
-      notify('Pausa finita!', 'Torniamo a studiare 🐧');
-      setMode('work');
-      setRemaining(cfg.work * 60);
-    }
-    setRunning(false);
-    endRef.current = null;
-  };
-
-  useEffect(() => {
-    if (!running) {
-      if (tickRef.current) window.clearInterval(tickRef.current);
-      tickRef.current = null;
-      if (mine?.studyingUntil) setPresence(undefined);
-      return;
-    }
-    endRef.current = Date.now() + remaining * 1000;
-    if (mode === 'work') setPresence(endRef.current);
-    tickRef.current = window.setInterval(() => {
-      const left = Math.max(0, Math.round(((endRef.current ?? 0) - Date.now()) / 1000));
-      setRemaining(left);
-      if (left <= 0) switchMode();
-    }, 250);
-    return () => {
-      if (tickRef.current) window.clearInterval(tickRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running]);
-
-  const toggle = async () => {
-    if (!running) await requestNotifications();
-    setRunning((r) => !r);
-  };
-
-  const reset = () => {
-    setRunning(false);
-    endRef.current = null;
-    setRemaining(total);
-  };
-
-  const switchTo = (m: Mode) => {
-    setMode(m);
-    setRunning(false);
-    setRemaining((m === 'work' ? cfg.work : cfg.brk) * 60);
-  };
-
-  const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
-  const secs = (remaining % 60).toString().padStart(2, '0');
+  const toggle = pomo.toggle;
+  const reset = pomo.reset;
+  const switchTo = pomo.switchTo;
+  const setSubjectId = pomo.setSubjectId;
+  const [mins, secs] = fmtClock(remaining).split(':');
   const pct = 1 - remaining / total;
   const myFish = fishOf(sessions, me, igloo);
   const partnerStudying = !!partner?.studyingUntil && partner.studyingUntil > Date.now();
@@ -174,12 +38,12 @@ export default function PomodoroPage() {
         <div className="relative flex justify-center items-end gap-2">
           <Penguin
             color={mine?.color ?? (mode === 'work' ? 'blue' : 'pink')}
-            accessory={mine?.accessory ?? 'none'}
+            cosmetics={cosmeticsOf(mine)}
             mood={mode === 'break' ? 'sleepy' : together ? 'love' : 'happy'}
             className="w-24 h-28"
           />
           {partnerStudying && partner && (
-            <Penguin color={partner.color} accessory={partner.accessory} mood={together ? 'love' : 'happy'} className="w-20 h-24" />
+            <Penguin color={partner.color} cosmetics={cosmeticsOf(partner)} mood={together ? 'love' : 'happy'} className="w-20 h-24" />
           )}
           {fishPop > 0 && (
             <span key={fishPop} className="anim-float absolute -top-2 text-3xl" style={{ animation: 'float-up 1.6s ease-out forwards' }}>
@@ -227,6 +91,11 @@ export default function PomodoroPage() {
             Pausa
           </button>
         </div>
+        {running && (
+          <p className="text-xs text-ink/50">
+            Puoi cambiare pagina: il timer resta in alto, così intanto ripassi definizioni e flashcard.
+          </p>
+        )}
       </div>
 
       <div className="relative mx-auto w-72 h-72 sm:w-80 sm:h-80">
@@ -268,6 +137,13 @@ export default function PomodoroPage() {
         >
           Reset
         </button>
+        <button
+          onClick={pomo.skip}
+          className="px-5 py-4 rounded-2xl bg-white/80 border border-penguin-blue-soft font-medium hover:bg-penguin-blue-soft"
+          title={mode === 'work' ? 'Passa alla pausa (il pomodoro non viene contato)' : 'Salta la pausa'}
+        >
+          ⏭
+        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-3 text-center">
@@ -277,12 +153,8 @@ export default function PomodoroPage() {
             type="number"
             min={1}
             max={90}
-            value={cfg.work}
-            onChange={(e) => {
-              const v = Math.max(1, +e.target.value || 1);
-              setCfg({ ...cfg, work: v });
-              if (mode === 'work' && !running) setRemaining(v * 60);
-            }}
+            value={pomo.work}
+            onChange={(e) => pomo.setWork(Math.max(1, +e.target.value || 1))}
             className="w-full text-center bg-transparent font-semibold focus:outline-none"
           />
         </label>
@@ -292,12 +164,8 @@ export default function PomodoroPage() {
             type="number"
             min={1}
             max={30}
-            value={cfg.brk}
-            onChange={(e) => {
-              const v = Math.max(1, +e.target.value || 1);
-              setCfg({ ...cfg, brk: v });
-              if (mode === 'break' && !running) setRemaining(v * 60);
-            }}
+            value={pomo.brk}
+            onChange={(e) => pomo.setBrk(Math.max(1, +e.target.value || 1))}
             className="w-full text-center bg-transparent font-semibold focus:outline-none"
           />
         </label>
