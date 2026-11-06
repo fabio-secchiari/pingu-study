@@ -101,23 +101,74 @@ export interface Note extends CloudFields {
   readBy: string[];
 }
 
-export const ACCESSORIES = [
-  { id: 'none', label: 'Niente', fish: 0 },
-  { id: 'sciarpa', label: 'Sciarpa', fish: 5 },
-  { id: 'occhiali', label: 'Occhiali da studio', fish: 15 },
-  { id: 'cuffia', label: 'Cuffia di lana', fish: 30 },
-  { id: 'fiocco', label: 'Fiocco', fish: 50 },
-  { id: 'corona', label: 'Coroncina', fish: 75 },
-  { id: 'tocco', label: 'Tocco da laurea', fish: 100 },
-] as const;
-export type AccessoryId = (typeof ACCESSORIES)[number]['id'];
+export type CosmeticSlot = 'testa' | 'viso' | 'collo' | 'pinna';
+
+export const SLOT_LABELS: Record<CosmeticSlot, string> = {
+  testa: 'Testa',
+  viso: 'Viso',
+  collo: 'Collo',
+  pinna: 'In pinna',
+};
+
+/** Cosmetici del pinguino: si sbloccano con i pesciolini (1 pomodoro = 1 🐟). */
+export const COSMETICS = [
+  // Testa
+  { id: 'orecchie', slot: 'testa', label: 'Orecchie da coniglio', fish: 8 },
+  { id: 'cappellino', slot: 'testa', label: 'Cappellino', fish: 15 },
+  { id: 'fiocco', slot: 'testa', label: 'Fiocco', fish: 20 },
+  { id: 'fiori', slot: 'testa', label: 'Coroncina di fiori', fish: 25 },
+  { id: 'cuffia', slot: 'testa', label: 'Cuffia di lana', fish: 30 },
+  { id: 'cuffie', slot: 'testa', label: 'Cuffie per la musica', fish: 35 },
+  { id: 'aureola', slot: 'testa', label: 'Aureola', fish: 45 },
+  { id: 'natale', slot: 'testa', label: 'Berretto di Natale', fish: 50 },
+  { id: 'mago', slot: 'testa', label: 'Cappello da mago', fish: 60 },
+  { id: 'corona', slot: 'testa', label: 'Coroncina', fish: 75 },
+  { id: 'tocco', slot: 'testa', label: 'Tocco da laurea', fish: 100 },
+  // Viso
+  { id: 'guance', slot: 'viso', label: 'Guance a cuore', fish: 4 },
+  { id: 'occhiali', slot: 'viso', label: 'Occhiali da studio', fish: 12 },
+  { id: 'sole', slot: 'viso', label: 'Occhiali da sole', fish: 28 },
+  { id: 'monocolo', slot: 'viso', label: 'Monocolo', fish: 55 },
+  // Collo
+  { id: 'sciarpa', slot: 'collo', label: 'Sciarpa', fish: 5 },
+  { id: 'papillon', slot: 'collo', label: 'Papillon', fish: 10 },
+  { id: 'campanello', slot: 'collo', label: 'Campanellino', fish: 22 },
+  { id: 'perle', slot: 'collo', label: 'Collana di perle', fish: 40 },
+  { id: 'medaglia', slot: 'collo', label: "Medaglia d'oro", fish: 90 },
+  // In pinna
+  { id: 'pesce', slot: 'pinna', label: 'Pesciolino', fish: 2 },
+  { id: 'libro', slot: 'pinna', label: 'Libro di Analisi', fish: 7 },
+  { id: 'matita', slot: 'pinna', label: 'Matita', fish: 14 },
+  { id: 'tazza', slot: 'pinna', label: 'Tazza di cioccolata', fish: 18 },
+  { id: 'palloncino', slot: 'pinna', label: 'Palloncino a cuore', fish: 32 },
+  { id: 'rosa', slot: 'pinna', label: 'Rosa', fish: 65 },
+] as const satisfies readonly { id: string; slot: CosmeticSlot; label: string; fish: number }[];
+
+export type CosmeticId = (typeof COSMETICS)[number]['id'];
+export type Cosmetics = Partial<Record<CosmeticSlot, CosmeticId>>;
+
+/** Vecchio campo a scelta singola (versioni precedenti). */
+export type AccessoryId = 'none' | 'sciarpa' | 'occhiali' | 'cuffia' | 'fiocco' | 'corona' | 'tocco';
+
+/** Cosmetici di un profilo, convertendo il vecchio "accessory" se serve. */
+export function cosmeticsOf(p?: { cosmetics?: Cosmetics; accessory?: AccessoryId } | null): Cosmetics {
+  if (!p) return {};
+  if (p.cosmetics) return p.cosmetics;
+  const a = p.accessory;
+  if (!a || a === 'none') return {};
+  if (a === 'sciarpa') return { collo: 'sciarpa' };
+  if (a === 'occhiali') return { viso: 'occhiali' };
+  return { testa: a };
+}
 
 export interface Profile extends CloudFields {
   id: string;
   userId: string;
   name: string;
   color: 'blue' | 'pink';
-  accessory: AccessoryId;
+  /** Vecchio campo (una sola scelta): usare `cosmetics` */
+  accessory?: AccessoryId;
+  cosmetics?: Cosmetics;
   /** Se nel futuro: sta facendo un pomodoro fino a questo istante. */
   studyingUntil?: number;
   studyingSubject?: string;

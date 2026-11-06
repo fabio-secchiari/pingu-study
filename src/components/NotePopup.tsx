@@ -4,6 +4,7 @@ import { notify } from '../lib/notify';
 import { db } from '../db';
 import { useMyUserId, UNAUTHORIZED } from '../lib/cloud';
 import Penguin from './Penguin';
+import { cosmeticsOf } from '../types';
 
 /** Mostra all'apertura il primo bigliettino non letto lasciato dall'altra persona. */
 export default function NotePopup() {
@@ -49,7 +50,7 @@ export default function NotePopup() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl p-6 text-center space-y-4 border-2 border-penguin-pink">
         <div className="relative w-28 mx-auto">
-          <Penguin color={sender?.color ?? 'pink'} accessory={sender?.accessory ?? 'fiocco'} mood="love" className="w-28 h-32 anim-wobble" />
+          <Penguin color={sender?.color ?? 'pink'} cosmetics={sender ? cosmeticsOf(sender) : { testa: 'fiocco' }} mood="love" className="w-28 h-32 anim-wobble" />
           <span className="absolute -right-4 bottom-6 text-4xl rotate-12" aria-hidden>
             💌
           </span>

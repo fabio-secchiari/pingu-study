@@ -7,10 +7,12 @@ import SettingsPage from './pages/SettingsPage';
 import ReviewPage from './pages/ReviewPage';
 import PrintPage from './pages/PrintPage';
 import IglooPage from './pages/IglooPage';
+import { PomodoroProvider } from './lib/pomodoro';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <PomodoroProvider>
       <Layout>
         <Routes>
           <Route path="/" element={<SubjectsPage />} />
@@ -22,6 +24,7 @@ export default function App() {
           <Route path="/impostazioni" element={<SettingsPage />} />
         </Routes>
       </Layout>
+      </PomodoroProvider>
     </BrowserRouter>
   );
 }

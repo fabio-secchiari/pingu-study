@@ -16,6 +16,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import MathEditor from './editor/MathEditor';
 import { compressImage } from '../lib/images';
 import { realmPatch } from '../lib/cloud';
+import { PomodoroChip } from './PomodoroBar';
 
 interface Props {
   subjectId: string;
@@ -146,6 +147,7 @@ export default function ItemModal({ subjectId, subjectRealmId, chapterId, item, 
               </select>
             </label>
           </div>
+          <PomodoroChip />
           <button
             onClick={cancel}
             aria-label="Chiudi"
