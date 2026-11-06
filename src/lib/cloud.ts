@@ -43,13 +43,20 @@ async function findSharedRealm(): Promise<string | undefined> {
   })?.realmId;
 }
 
-liveQuery(findSharedRealm).subscribe({
-  next: (realmId) => (sharedRealmCache = realmId),
-  error: () => {},
+// liveQuery si riattiva solo quando cambiano le tabelle, non quando cambia l'utente:
+// al login (l'utente arriva dopo il primo calcolo) va ricalcolato da capo.
+let cacheSub: { unsubscribe(): void } | undefined;
+db.cloud.currentUser.subscribe(() => {
+  cacheSub?.unsubscribe();
+  cacheSub = liveQuery(findSharedRealm).subscribe({
+    next: (realmId) => (sharedRealmCache = realmId),
+    error: () => {},
+  });
 });
 
 export function useSharedRealmId(): string | undefined {
-  return useLiveQuery(findSharedRealm, []);
+  const user = useCurrentUser();
+  return useLiveQuery(findSharedRealm, [user?.userId, user?.isLoggedIn]);
 }
 
 /**
@@ -118,16 +125,43 @@ export async function inviteToIgloo(realmId: string, partnerEmail: string) {
 
 export function useProfiles() {
   const me = useMyUserId();
+  const shared = useSharedRealmId();
   const profiles = useLiveQuery(() => db.profiles.toArray(), []) ?? [];
-  const mine = profiles.find((p) => p.userId === me);
-  const partner = profiles.find((p) => p.userId !== me && p.userId !== UNAUTHORIZED);
+  // Se per errore ci sono più profili della stessa persona, preferisci quello nell'igloo
+  const pick = (list: Profile[]) => list.find((p) => shared && p.realmId === shared) ?? list[0];
+  const mine = pick(profiles.filter((p) => p.userId === me));
+  const partner = pick(profiles.filter((p) => p.userId !== me && p.userId !== UNAUTHORIZED));
   return { me, mine, partner, profiles };
 }
 
+/** Tiene un solo profilo per l'utente (preferendo quello già nell'igloo) e cancella i doppioni. */
+export async function dedupeMyProfiles(me: string, sharedRealmId?: string) {
+  const mine = await db.profiles.where('userId').equals(me).toArray();
+  if (mine.length <= 1) return 0;
+  const keep = mine.find((p) => sharedRealmId && p.realmId === sharedRealmId) ?? mine[0];
+  const extra = mine.filter((p) => p.id !== keep.id && (!p.owner || p.owner === me)).map((p) => p.id);
+  await db.profiles.bulkDelete(extra);
+  return extra.length;
+}
+
+const ensuring = new Map<string, Promise<void>>();
+
 /** Crea il profilo dell'utente al primo accesso e riassegna le sessioni fatte prima del login. */
-export async function ensureProfile(userId: string, email?: string) {
-  if (userId === UNAUTHORIZED) return;
+export function ensureProfile(userId: string, email?: string): Promise<void> {
+  if (userId === UNAUTHORIZED) return Promise.resolve();
+  // Evita doppie creazioni (StrictMode, più componenti, più chiamate ravvicinate)
+  if (!ensuring.has(userId)) ensuring.set(userId, doEnsureProfile(userId, email));
+  return ensuring.get(userId)!;
+}
+
+async function doEnsureProfile(userId: string, email?: string) {
   await db.sessions.where('userId').equals(UNAUTHORIZED).modify({ userId });
+  // Su un dispositivo nuovo il profilo esiste già nel cloud: aspetta di averlo scaricato
+  try {
+    await db.cloud.sync({ purpose: 'pull', wait: true });
+  } catch {
+    /* offline: si procede con ciò che c'è */
+  }
   const existing = await db.profiles.where('userId').equals(userId).first();
   if (existing) return;
   const name = (email ?? userId).split('@')[0];
@@ -154,7 +188,7 @@ export async function reconcileWithIgloo(realmId: string, me: string) {
   // Solo ciò che sta nello spazio privato: mai spostare dati già in un altro realm condiviso.
   const isPrivate = (r?: string) => !r || r === me;
   return db.transaction('rw', [db.profiles, db.sessions, db.notes, db.igloo], async () => {
-    let moved = 0;
+    let moved = await dedupeMyProfiles(me, realmId);
     moved += await db.profiles.filter((p) => p.userId === me && isPrivate(p.realmId)).modify({ realmId });
     moved += await db.sessions.filter((x) => x.userId === me && isPrivate(x.realmId)).modify({ realmId });
     moved += await db.notes.filter((n) => n.fromUserId === me && isPrivate(n.realmId)).modify({ realmId });
@@ -182,7 +216,8 @@ export function useMisplacedCount(realmId: string | undefined, me: string): numb
         db.sessions.filter((x) => x.userId === me && priv(x.realmId)).count(),
         db.notes.filter((x) => x.fromUserId === me && priv(x.realmId)).count(),
       ]);
-      return p + s + n;
+      const mineCount = await db.profiles.where('userId').equals(me).count();
+      return p + s + n + Math.max(0, mineCount - 1);
     }, [realmId, me]) ?? 0
   );
 }
