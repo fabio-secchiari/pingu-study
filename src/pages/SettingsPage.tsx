@@ -3,6 +3,7 @@ import { db } from '../db';
 import { downloadJson, exportBackup, importBackup } from '../lib/backup';
 import { parseJsonLoose } from '../lib/schema';
 import { useCurrentUser } from '../lib/cloud';
+import { notify, notifyState, requestNotifications, type NotifyState } from '../lib/notify';
 
 const LLM_PROMPT = `Sei un assistente che estrae contenuti matematici da appunti/dispense PDF e li converte in un JSON rigorosamente conforme allo schema qui sotto.
 
@@ -112,11 +113,11 @@ export default function SettingsPage() {
     alert('Dati cancellati.');
   };
 
+  const [notif, setNotif] = useState<NotifyState>(() => notifyState());
   const askNotifications = async () => {
-    if ('Notification' in window) {
-      const p = await Notification.requestPermission();
-      alert('Permesso notifiche: ' + p);
-    }
+    const st = await requestNotifications();
+    setNotif(st);
+    if (st === 'attive') notify('Penguin Study', 'Le notifiche funzionano! 🐧', 'test');
   };
 
   const copyPrompt = async () => {
@@ -202,15 +203,35 @@ export default function SettingsPage() {
 
       <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
         <h3 className="font-semibold">Notifiche</h3>
-        <p className="text-sm text-ink/60">
-          Utili per il pomodoro quando il tab è in background. Su iOS serve aggiungere l'app alla
-          Home prima di poterle ricevere.
+        <p className="text-sm">
+          Stato su questo dispositivo:{' '}
+          <b>
+            {{
+              attive: '✅ attive',
+              'da-chiedere': '⏳ non ancora autorizzate',
+              bloccate: '🚫 bloccate',
+              'serve-home': '📱 serve aggiungere l’app alla Home',
+              'non-supportate': '❌ non supportate da questo browser',
+            }[notif]}
+          </b>
         </p>
+        <ul className="text-sm text-ink/60 list-disc pl-5 space-y-1">
+          <li>Arrivano a fine pomodoro/pausa e quando ricevi un bigliettino, mentre l'app è aperta o in background.</li>
+          <li>
+            <b>iPhone/iPad:</b> apri il sito in Safari → Condividi → "Aggiungi alla schermata Home", poi apri l'app
+            dall'icona e attiva qui le notifiche (serve iOS 16.4 o successivo).
+          </li>
+          <li>
+            Se risultano <b>bloccate</b>, vanno riattivate dalle impostazioni del browser/sistema per questo sito (su
+            iPad: Impostazioni → Notifiche → Penguin).
+          </li>
+          <li>Ad app chiusa del tutto non arrivano: servirebbe un server di notifiche push.</li>
+        </ul>
         <button
           onClick={askNotifications}
           className="px-4 py-2.5 rounded-2xl bg-white border border-penguin-blue-soft font-medium hover:bg-penguin-blue-soft"
         >
-          Richiedi permesso notifiche
+          {notif === 'attive' ? 'Invia una notifica di prova' : 'Attiva le notifiche'}
         </button>
       </section>
 

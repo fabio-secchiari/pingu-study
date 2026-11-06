@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { notify } from '../lib/notify';
 import { db } from '../db';
 import { useMyUserId, UNAUTHORIZED } from '../lib/cloud';
 import Penguin from './Penguin';
@@ -20,6 +22,25 @@ export default function NotePopup() {
     () => (note ? db.profiles.where('userId').equals(note.fromUserId).first() : undefined),
     [note?.fromUserId]
   );
+
+  // Notifica di sistema (una volta sola per bigliettino), utile se l'app è in background
+  useEffect(() => {
+    if (!note) return;
+    const KEY = 'penguin-notified-notes';
+    let seen: string[] = [];
+    try {
+      seen = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+    } catch {
+      /* ignore */
+    }
+    if (seen.includes(note.id)) return;
+    notify(`💌 Bigliettino da ${note.fromName}`, note.text, 'note-' + note.id);
+    try {
+      localStorage.setItem(KEY, JSON.stringify([...seen, note.id].slice(-50)));
+    } catch {
+      /* ignore */
+    }
+  }, [note]);
 
   if (!note) return null;
   const markRead = () => db.notes.update(note.id, { readBy: [...note.readBy, me] });

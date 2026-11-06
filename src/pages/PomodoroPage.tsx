@@ -5,6 +5,8 @@ import { uid } from '../types';
 import Penguin from '../components/Penguin';
 import { realmPatch, useIgloo, useMyUserId, useProfiles } from '../lib/cloud';
 import { fishOf, minutesBySubject } from '../lib/stats';
+import { notify, requestNotifications } from '../lib/notify';
+import StudyCalendar from '../components/StudyCalendar';
 
 type Mode = 'work' | 'break';
 
@@ -96,11 +98,7 @@ export default function PomodoroPage() {
     } catch {}
   };
 
-  const notify = (title: string, body: string) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/penguin-blue.svg' });
-    }
-  };
+
 
   const switchMode = () => {
     beep();
@@ -141,11 +139,7 @@ export default function PomodoroPage() {
   }, [running]);
 
   const toggle = async () => {
-    if (!running && 'Notification' in window && Notification.permission === 'default') {
-      try {
-        await Notification.requestPermission();
-      } catch {}
-    }
+    if (!running) await requestNotifications();
     setRunning((r) => !r);
   };
 
@@ -175,7 +169,7 @@ export default function PomodoroPage() {
   const weeklyMax = Math.max(1, ...weeklyRows.map((r) => r.min));
 
   return (
-    <div className="max-w-xl mx-auto space-y-8">
+    <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center space-y-4">
         <div className="relative flex justify-center items-end gap-2">
           <Penguin
@@ -329,6 +323,8 @@ export default function PomodoroPage() {
           ))}
         </section>
       )}
+
+      <StudyCalendar sessions={sessions} subjects={subjects} me={me} mine={mine} partner={partner} />
     </div>
   );
 }

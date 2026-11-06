@@ -7,7 +7,15 @@ import LoginDialog from './LoginDialog';
 import NotePopup from './NotePopup';
 import Celebration from './Celebration';
 import Penguin from './Penguin';
-import { ensureProfile, useCurrentUser, useIgloo, useProfiles } from '../lib/cloud';
+import {
+  ensureProfile,
+  reconcileWithIgloo,
+  useCurrentUser,
+  useIgloo,
+  useMisplacedCount,
+  useProfiles,
+  useSharedRealmId,
+} from '../lib/cloud';
 import { specialDays } from '../lib/special';
 
 const navItems = [
@@ -37,13 +45,21 @@ function SyncDot() {
 export default function Layout({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const user = useCurrentUser();
-  const { mine } = useProfiles();
+  const { me, mine } = useProfiles();
+  const shared = useSharedRealmId();
+  const misplaced = useMisplacedCount(shared, me);
   const igloo = useIgloo();
   const special = specialDays(igloo);
 
   useEffect(() => {
     if (user?.isLoggedIn && user.userId) ensureProfile(user.userId, user.email);
   }, [user?.isLoggedIn, user?.userId, user?.email]);
+
+  // Profilo, pomodori e bigliettini devono stare nell'igloo condiviso, altrimenti l'altra
+  // persona non li vede. Li sposto in automatico appena ce n'è qualcuno fuori posto.
+  useEffect(() => {
+    if (shared && misplaced > 0) reconcileWithIgloo(shared, me).catch((e) => console.error('Riallineamento igloo', e));
+  }, [shared, me, misplaced]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
