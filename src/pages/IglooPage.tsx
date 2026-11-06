@@ -15,7 +15,7 @@ import {
   useSharedRealmId,
 } from '../lib/cloud';
 import { fishOf, petMood, streak } from '../lib/stats';
-import { petAgeDays, specialDays } from '../lib/special';
+import { monthsTogether, petAgeDays, specialDays } from '../lib/special';
 import { daysUntil } from '../lib/text';
 
 function StudyingBadge({ p }: { p?: Profile }) {
@@ -68,6 +68,7 @@ export default function IglooPage() {
   const sendNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!note.trim()) return;
+    if (!shared) return alert("Prima entrate nello stesso igloo (qui sotto), poi i bigliettini arrivano all'altra persona.");
     await db.notes.add({
       id: uid(),
       fromUserId: me,
@@ -75,7 +76,7 @@ export default function IglooPage() {
       text: note.trim(),
       createdAt: Date.now(),
       readBy: [me],
-      ...realmPatch(),
+      realmId: shared,
     });
     setNote('');
   };
@@ -380,14 +381,16 @@ export default function IglooPage() {
               Anniversario
               <input
                 type="date"
-                value={`2000-${igloo.anniversary}`}
-                onChange={(e) => e.target.value && saveIgloo({ anniversary: e.target.value.slice(5) })}
+                value={igloo.anniversary}
+                onChange={(e) => e.target.value && saveIgloo({ anniversary: e.target.value })}
                 className="mt-1 w-full px-3 py-2 rounded-xl border border-penguin-blue-soft"
               />
             </label>
           </div>
           <p className="text-xs text-ink/50">
-            Ha {age} giorni. Ogni 22 del mese c'è una sorpresa per il mesiversario, e nel suo compleanno i pomodori valgono doppio.
+            Ha {age} giorni. Voi state insieme da {monthsTogether(igloo.anniversary)} mesi: ogni{' '}
+            {Number(igloo.anniversary.slice(8))} del mese c'è una sorpresa per il mesiversario, e nel compleanno di{' '}
+            {igloo.petName} i pomodori valgono doppio.
           </p>
         </section>
       </div>

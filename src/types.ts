@@ -85,7 +85,7 @@ export interface ProofImage extends CloudFields {
 export interface StudySession extends CloudFields {
   id: string;
   userId: string;
-  kind: 'pomodoro' | 'ripasso';
+  kind: 'pomodoro' | 'ripasso' | 'manuale';
   subjectId?: string;
   minutes: number;
   endedAt: number;
@@ -129,7 +129,7 @@ export interface IglooSettings extends CloudFields {
   petName: string;
   /** YYYY-MM-DD */
   petBirthday: string;
-  /** MM-DD */
+  /** YYYY-MM-DD (le prime versioni salvavano solo MM-DD) */
   anniversary: string;
 }
 

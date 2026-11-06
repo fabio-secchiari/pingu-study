@@ -142,26 +142,80 @@ export async function ensureProfile(userId: string, email?: string) {
   await db.profiles.add(profile);
 }
 
+// --- Riallineamento con l'igloo ---------------------------------------------------
+
+/**
+ * Porta nell'igloo condiviso il profilo, i pomodori e i bigliettini dell'utente corrente,
+ * anche se erano stati creati prima di entrare nell'igloo (o prima che l'app se ne accorgesse).
+ * Le materie restano dove sono: si spostano solo col pulsante apposito.
+ */
+export async function reconcileWithIgloo(realmId: string, me: string) {
+  if (!realmId || !me || me === UNAUTHORIZED) return 0;
+  return db.transaction('rw', [db.profiles, db.sessions, db.notes, db.igloo], async () => {
+    let moved = 0;
+    moved += await db.profiles.filter((p) => p.userId === me && p.realmId !== realmId).modify({ realmId });
+    moved += await db.sessions.filter((x) => x.userId === me && x.realmId !== realmId).modify({ realmId });
+    moved += await db.notes.filter((n) => n.fromUserId === me && n.realmId !== realmId).modify({ realmId });
+    // Impostazioni del pinguino: se nell'igloo non ce ne sono ancora, ci porto le mie.
+    const all = await db.igloo.toArray();
+    if (!all.some((r) => r.realmId === realmId)) {
+      const mine = all.find((r) => !r.owner || r.owner === me);
+      if (mine) {
+        await db.igloo.update(mine.id, { realmId });
+        moved++;
+      }
+    }
+    return moved;
+  });
+}
+
+/** Quanti oggetti "di coppia" dell'utente non sono ancora nell'igloo (reattivo). */
+export function useMisplacedCount(realmId: string | undefined, me: string): number {
+  return (
+    useLiveQuery(async () => {
+      if (!realmId || me === UNAUTHORIZED) return 0;
+      const [p, s, n] = await Promise.all([
+        db.profiles.filter((x) => x.userId === me && x.realmId !== realmId).count(),
+        db.sessions.filter((x) => x.userId === me && x.realmId !== realmId).count(),
+        db.notes.filter((x) => x.fromUserId === me && x.realmId !== realmId).count(),
+      ]);
+      return p + s + n;
+    }, [realmId, me]) ?? 0
+  );
+}
+
 // --- Impostazioni dell'igloo -------------------------------------------------------
 
 export const DEFAULT_IGLOO: Omit<IglooSettings, 'id'> = {
   petName: 'Pingu',
   petBirthday: '2026-01-28',
-  anniversary: '02-22',
+  anniversary: '2026-02-22',
 };
+
+/** Le prime versioni salvavano l'anniversario come "MM-DD": lo completo con l'anno 2026. */
+function normalizeIgloo(row: IglooSettings): IglooSettings {
+  const anniversary = /^\d{2}-\d{2}$/.test(row.anniversary) ? `2026-${row.anniversary}` : row.anniversary;
+  return { ...DEFAULT_IGLOO, ...row, anniversary };
+}
 
 export function useIgloo(): IglooSettings {
   const rows = useLiveQuery(() => db.igloo.toArray(), []);
   const shared = useSharedRealmId();
   // Preferisci le impostazioni che stanno nell'igloo condiviso.
   const row = rows?.find((r) => shared && r.realmId === shared) ?? rows?.[0];
-  return row ?? { id: '', ...DEFAULT_IGLOO };
+  return normalizeIgloo(row ?? { id: '', ...DEFAULT_IGLOO });
 }
 
 export async function saveIgloo(patch: Partial<IglooSettings>) {
   const rows = await db.igloo.toArray();
   const shared = sharedRealmCache;
-  const row = rows.find((r) => shared && r.realmId === shared) ?? rows[0];
-  if (row) await db.igloo.update(row.id, patch);
-  else await db.igloo.add({ id: uid(), ...DEFAULT_IGLOO, ...patch, ...realmPatch() });
+  const sharedRow = shared ? rows.find((r) => r.realmId === shared) : undefined;
+  if (sharedRow) return db.igloo.update(sharedRow.id, patch);
+  if (shared) {
+    // C'è l'igloo ma non ancora le sue impostazioni: le creo lì partendo da quelle locali
+    const base = rows[0] ? normalizeIgloo(rows[0]) : { id: '', ...DEFAULT_IGLOO };
+    return db.igloo.add({ ...base, ...patch, id: uid(), realmId: shared, owner: undefined });
+  }
+  if (rows[0]) return db.igloo.update(rows[0].id, patch);
+  return db.igloo.add({ id: uid(), ...DEFAULT_IGLOO, ...patch });
 }

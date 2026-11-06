@@ -7,6 +7,14 @@ export interface SpecialDay {
   emoji: string;
 }
 
+/** Mesi interi dall'inizio della relazione (per la pagina Igloo). */
+export function monthsTogether(anniversary: string, now = new Date()): number {
+  const [y, m, d] = anniversary.split('-').map(Number);
+  let months = (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m);
+  if (now.getDate() < d) months--;
+  return Math.max(0, months);
+}
+
 /** Età in giorni del pinguino domestico. */
 export function petAgeDays(birthday: string, now = new Date()): number {
   const [y, m, d] = birthday.split('-').map(Number);
@@ -18,21 +26,23 @@ export function petAgeDays(birthday: string, now = new Date()): number {
 export function specialDays(igloo: IglooSettings, now = new Date()): SpecialDay[] {
   const out: SpecialDay[] = [];
   const md = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const [annM, annD] = igloo.anniversary.split('-').map(Number);
+  const [annY, annM, annD] = igloo.anniversary.split('-').map(Number);
   const [, petM, petD] = igloo.petBirthday.split('-').map(Number);
+  const months = (now.getFullYear() - annY) * 12 + (now.getMonth() + 1 - annM);
 
-  if (md === igloo.anniversary) {
+  if (now.getMonth() + 1 === annM && now.getDate() === annD && now.getFullYear() > annY) {
+    const years = now.getFullYear() - annY;
     out.push({
       kind: 'anniversario',
-      title: 'Buon anniversario! 💕',
-      subtitle: 'Un altro anno insieme nello stesso igloo. Oggi niente ansia da esame, solo coccole.',
+      title: `Buon ${years}° anniversario! 💕`,
+      subtitle: `${years === 1 ? 'Un anno' : `${years} anni`} insieme nello stesso igloo. Oggi niente ansia da esame, solo coccole.`,
       emoji: '💕',
     });
-  } else if (now.getDate() === annD && now.getMonth() + 1 !== annM) {
+  } else if (now.getDate() === annD && months > 0) {
     out.push({
       kind: 'mesiversario',
-      title: 'Buon mesiversario! 💗',
-      subtitle: 'Il 22 è sempre un giorno speciale. Un pomodoro insieme per festeggiare?',
+      title: `Buon ${months}° mesiversario! 💗`,
+      subtitle: `${months} mesi insieme dal ${new Date(annY, annM - 1, annD).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}. Un pomodoro insieme per festeggiare?`,
       emoji: '💗',
     });
   }
