@@ -127,7 +127,7 @@ export const latexHighlighter = ViewPlugin.fromClass(
 /* Snippet stile LaTeX Suite                                           */
 /* ------------------------------------------------------------------ */
 
-interface Snip {
+export interface Snip {
   trigger: string;
   /** Sintassi snippet di CodeMirror: ${1}, ${2:default}… */
   body: string;

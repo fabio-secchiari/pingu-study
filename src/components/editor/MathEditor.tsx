@@ -5,6 +5,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import katex from 'katex';
 import Markdown from '../Markdown';
+import CheatSheet from '../CheatSheet';
 import {
   insertSnippet,
   latexHighlighter,
@@ -75,6 +76,7 @@ export default function MathEditor({
 
   const [formula, setFormula] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
+  const [help, setHelp] = useState(false);
   const [preview, setPreview] = useState<boolean>(() => {
     try {
       return localStorage.getItem(PREVIEW_KEY) === '1';
@@ -176,15 +178,30 @@ export default function MathEditor({
         <button type="button" className={btn} onClick={run((v) => insertSnippet(v, '[[${1}]]${2}'))} title="Collega un elemento">🔗</button>
         <button
           type="button"
+          onClick={() => setHelp((h) => !h)}
+          aria-pressed={help}
+          title="Scorciatoie LaTeX"
+          className={`${btn} ml-auto font-semibold ${help ? 'bg-penguin-pink-soft text-penguin-pink-dark' : ''}`}
+        >
+          ?
+        </button>
+        <button
+          type="button"
           onClick={togglePreview}
           aria-pressed={preview}
           title={preview ? 'Nascondi anteprima' : 'Mostra anteprima'}
-          className={`${btn} ml-auto ${preview ? 'bg-penguin-blue-soft text-penguin-blue-dark' : ''}`}
+          className={`${btn} ${preview ? 'bg-penguin-blue-soft text-penguin-blue-dark' : ''}`}
         >
           👁
         </button>
       </div>
 
+      {help && (
+        <div className="border-b border-ink/5 px-3 py-3 bg-penguin-pink-soft/20 max-h-80 overflow-y-auto">
+          <CheatSheet compact />
+          <p className="text-xs text-ink/50 mt-2">La guida completa è in Impostazioni → La guida del pinguino.</p>
+        </div>
+      )}
       <div ref={host} className="penguin-editor" style={{ minHeight }} />
 
       {formula !== null && formula.trim() !== '' && !preview && (

@@ -356,7 +356,20 @@ export default function SubjectPage() {
         <button onClick={() => nav('/')} className="text-ink/60 hover:text-ink text-2xl leading-none" aria-label="Indietro">
           ←
         </button>
-        <Penguin color={subject.color === 'pink' ? 'pink' : 'blue'} className="w-12 h-12" />
+        <button
+          onClick={() => db.subjects.update(id, { color: subject.color === 'pink' ? 'blue' : 'pink' })}
+          className="relative shrink-0 rounded-2xl hover:bg-white/60 active:scale-95 transition p-0.5"
+          title={`Pinguino ${subject.color === 'pink' ? 'rosa' : 'blu'}: tocca per farlo ${subject.color === 'pink' ? 'blu' : 'rosa'}`}
+          aria-label={`Cambia colore della materia in ${subject.color === 'pink' ? 'blu' : 'rosa'}`}
+        >
+          <Penguin color={subject.color === 'pink' ? 'pink' : 'blue'} className="w-12 h-12" />
+          <span
+            className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
+              subject.color === 'pink' ? 'bg-penguin-blue' : 'bg-penguin-pink'
+            }`}
+            aria-hidden
+          />
+        </button>
         <div className="flex-1 min-w-0 basis-48">
           <h2 className="text-2xl font-bold truncate">{subject.name}</h2>
           <button

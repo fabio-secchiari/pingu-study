@@ -134,7 +134,11 @@ export default function Layout({ children }: { children: ReactNode }) {
         )}
       </header>
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6">{children}</main>
-      <footer className="text-center text-xs text-ink/40 py-4">🐧 fatto con amore per studiare meglio, insieme</footer>
+      <footer className="text-center text-xs text-ink/40 py-4 space-x-2">
+        <span>🐧 fatto con amore per studiare meglio, insieme</span>
+        <span aria-hidden>·</span>
+        <Link to="/guida" className="underline hover:text-ink/70">📖 Guida</Link>
+      </footer>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <LoginDialog />
