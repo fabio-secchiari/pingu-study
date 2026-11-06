@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { db } from '../db';
 import { downloadJson, exportBackup, importBackup } from '../lib/backup';
 import { parseJsonLoose } from '../lib/schema';
@@ -141,6 +142,18 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold">Impostazioni</h2>
+
+      <Link
+        to="/guida"
+        className="flex items-center gap-3 p-4 rounded-3xl bg-gradient-to-br from-penguin-blue-soft to-penguin-pink-soft border border-penguin-blue-soft hover:shadow-sm"
+      >
+        <span className="text-3xl" aria-hidden>📖</span>
+        <span className="flex-1">
+          <b>La guida del pinguino</b>
+          <span className="block text-sm text-ink/60">Scorciatoie LaTeX, formattazione, ripasso, pomodoro e igloo.</span>
+        </span>
+        <span aria-hidden>→</span>
+      </Link>
 
       <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
         <h3 className="font-semibold">Account e sincronizzazione</h3>

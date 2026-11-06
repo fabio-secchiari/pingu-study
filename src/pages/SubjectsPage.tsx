@@ -32,7 +32,7 @@ export default function SubjectsPage() {
     await db.subjects.add({
       id: uid(),
       name: name.trim(),
-      color: Math.random() > 0.5 ? 'blue' : 'pink',
+      color: 'blue', // si cambia toccando il pinguino dentro la materia
       createdAt: Date.now(),
       ...realmPatch(),
     });

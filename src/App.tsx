@@ -7,6 +7,7 @@ import SettingsPage from './pages/SettingsPage';
 import ReviewPage from './pages/ReviewPage';
 import PrintPage from './pages/PrintPage';
 import IglooPage from './pages/IglooPage';
+import GuidePage from './pages/GuidePage';
 import { PomodoroProvider } from './lib/pomodoro';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/igloo" element={<IglooPage />} />
           <Route path="/pomodoro" element={<PomodoroPage />} />
           <Route path="/impostazioni" element={<SettingsPage />} />
+          <Route path="/guida" element={<GuidePage />} />
         </Routes>
       </Layout>
       </PomodoroProvider>
