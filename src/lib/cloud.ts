@@ -19,18 +19,37 @@ export function useMyUserId(): string {
 
 let sharedRealmCache: string | undefined;
 
-function pickShared(realms: any[]): string | undefined {
+/**
+ * L'igloo condiviso è un realm che l'utente ha creato oppure di cui ha ACCETTATO l'invito.
+ * I realm degli inviti ancora in sospeso (o rifiutati) non contano: altrimenti i nuovi dati
+ * finirebbero nell'igloo di chiunque ci abbia invitato.
+ */
+async function findSharedRealm(): Promise<string | undefined> {
   const me = db.cloud.currentUserId;
-  return realms.find((r) => r.realmId !== me && r.realmId !== 'rlm-public')?.realmId;
+  const email = db.cloud.currentUser.value?.email?.toLowerCase();
+  if (!me || me === UNAUTHORIZED) return undefined;
+  const realms = await db.realms.toArray();
+  const members = await db.members.toArray();
+  const candidates = realms.filter((r) => r.realmId !== me && r.realmId !== 'rlm-public');
+  return candidates.find((r) => {
+    if (r.owner === me) return true;
+    return members.some(
+      (m) =>
+        m.realmId === r.realmId &&
+        (m.userId === me || (email && m.email?.toLowerCase() === email)) &&
+        !!m.accepted &&
+        !m.rejected
+    );
+  })?.realmId;
 }
 
-liveQuery(() => db.realms.toArray()).subscribe({
-  next: (realms) => (sharedRealmCache = pickShared(realms)),
+liveQuery(findSharedRealm).subscribe({
+  next: (realmId) => (sharedRealmCache = realmId),
   error: () => {},
 });
 
 export function useSharedRealmId(): string | undefined {
-  return useLiveQuery(async () => pickShared(await db.realms.toArray()), []);
+  return useLiveQuery(findSharedRealm, []);
 }
 
 /**
