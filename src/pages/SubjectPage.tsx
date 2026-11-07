@@ -45,6 +45,7 @@ import { realmPatch } from '../lib/cloud';
 import { celebrate } from '../components/Celebration';
 import Penguin from '../components/Penguin';
 import StatusMenu from '../components/StatusMenu';
+import { loadDraft, type ItemDraft } from '../lib/drafts';
 
 type SortMode = 'manuale' | 'az' | 'za' | 'recenti' | 'vecchi';
 const SORT_LABELS: Record<SortMode, string> = {
@@ -265,7 +266,7 @@ export default function SubjectPage() {
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
   const [newChapter, setNewChapter] = useState('');
-  const [modal, setModal] = useState<{ chapterId: string; item: Item | null } | null>(null);
+  const [modal, setModal] = useState<{ chapterId: string; item: Item | null; restored?: ItemDraft } | null>(null);
   const [filter, setFilter] = useState<ItemType | 'tutti'>('tutti');
   const [statusFilter, setStatusFilter] = useState<StudyStatus | 'tutti'>('tutti');
   const [proofOnly, setProofOnly] = useState(false);
@@ -279,6 +280,18 @@ export default function SubjectPage() {
   const subject = useLiveQuery(() => db.subjects.get(id), [id]);
   const chapters = useLiveQuery(() => db.chapters.where('subjectId').equals(id).sortBy('order'), [id]);
   const items = useLiveQuery(() => db.items.where('subjectId').equals(id).toArray(), [id]);
+
+  // Riprendi la scheda che stavi scrivendo prima di una ricarica/chiusura dell'app
+  const draftChecked = useRef<string | null>(null);
+  useEffect(() => {
+    if (draftChecked.current === id || !items || modal) return;
+    draftChecked.current = id;
+    const d = loadDraft();
+    if (!d || d.subjectId !== id) return;
+    const it = d.isNew ? null : items.find((i) => i.id === d.draft.id);
+    if (!d.isNew && !it) return; // elemento eliminato nel frattempo
+    setModal({ chapterId: d.chapterId, item: it ?? null, restored: d });
+  }, [items, id, modal]);
 
   // Apertura diretta di un elemento (da ricerca globale o da un [[collegamento]])
   const openParam = params.get('item');
@@ -649,6 +662,7 @@ export default function SubjectPage() {
           subjectRealmId={subject.realmId}
           chapterId={modal.chapterId}
           item={modal.item}
+          restored={modal.restored}
           onClose={() => setModal(null)}
         />
       )}
