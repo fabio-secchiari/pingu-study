@@ -8,6 +8,7 @@ import MathText from '../components/MathText';
 import Penguin from '../components/Penguin';
 import { isDue, review, type Grade } from '../lib/srs';
 import { realmPatch, useMyUserId } from '../lib/cloud';
+import { useMaterieActive } from '../lib/sections';
 
 type Scope = 'scadute' | 'tutte' | 'dimostrazioni' | 'deboli';
 const SCOPE_LABELS: Record<Scope, string> = {
@@ -46,6 +47,8 @@ export default function ReviewPage() {
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(0);
   const started = useRef(Date.now());
+  // Quando sei su un'altra scheda il ripasso resta in pausa (e i tasti 1/2/3/spazio non lo toccano)
+  const active = useMaterieActive();
 
   const start = () => {
     const now = Date.now();
@@ -100,7 +103,9 @@ export default function ReviewPage() {
   // Scorciatoie: spazio = mostra, 1/2/3 = valuta
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!current) return;
+      if (!current || !active) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       if (e.key === ' ' && !revealed) {
         e.preventDefault();
         setRevealed(true);

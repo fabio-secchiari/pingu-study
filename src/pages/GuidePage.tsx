@@ -289,6 +289,11 @@ export default function GuidePage() {
           </li>
           <li>☁️ Con l'accesso i dati si sincronizzano da soli su tutti i dispositivi, anche dopo aver studiato offline.</li>
           <li>
+            🧭 Puoi saltare su Igloo o Pomodoro quando vuoi: tornando su <b>Materie</b> ritrovi la materia, la scheda che
+            stavi scrivendo o il ripasso esattamente dove li avevi lasciati. Se l'app si chiude mentre scrivi, la bozza
+            riappare quando riapri la materia.
+          </li>
+          <li>
             💾 Ogni tanto fai un <b>backup</b> da <Link to="/impostazioni" className="underline">Impostazioni</Link>: non si sa
             mai.
           </li>

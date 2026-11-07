@@ -19,6 +19,7 @@ import {
   useSharedRealmId,
 } from '../lib/cloud';
 import { specialDays } from '../lib/special';
+import { useSections } from '../lib/sections';
 
 const navItems = [
   { to: '/', label: 'Materie', icon: '📚' },
@@ -52,6 +53,10 @@ export default function Layout({ children }: { children: ReactNode }) {
   const misplaced = useMisplacedCount(shared, me);
   const igloo = useIgloo();
   const special = specialDays(igloo);
+  // "Materie" (e il logo) riportano esattamente dove eri: materia aperta, ripasso a metà…
+  // Se sei già nella sezione, il pulsante torna all'elenco delle materie.
+  const { materieActive, lastMateriePath } = useSections();
+  const materieHref = materieActive ? '/' : lastMateriePath;
 
   useEffect(() => {
     if (user?.isLoggedIn && user.userId) ensureProfile(user.userId, user.email);
@@ -78,7 +83,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-full flex flex-col">
       <header className="sticky top-0 z-30 backdrop-blur bg-white/60 border-b border-penguin-blue-soft">
         <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to={materieHref} className="flex items-center gap-2 shrink-0">
             <Penguin color="blue" accessory={special.length ? 'fiocco' : 'none'} className="w-9 h-10 drop-shadow" />
             <h1 className="hidden md:block text-lg font-bold tracking-tight text-ink">Penguin Study</h1>
           </Link>
@@ -86,11 +91,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             {navItems.map((n) => (
               <NavLink
                 key={n.to}
-                to={n.to}
+                to={n.to === '/' ? materieHref : n.to}
                 end={n.to === '/'}
                 className={({ isActive }) =>
                   `px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap ${
-                    isActive ? 'bg-penguin-blue text-white shadow-sm' : 'text-ink/70 hover:bg-penguin-blue-soft'
+                    (n.to === '/' ? materieActive : isActive)
+                      ? 'bg-penguin-blue text-white shadow-sm'
+                      : 'text-ink/70 hover:bg-penguin-blue-soft'
                   }`
                 }
               >

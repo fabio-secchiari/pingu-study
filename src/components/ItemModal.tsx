@@ -17,6 +17,8 @@ import MathEditor from './editor/MathEditor';
 import { compressImage } from '../lib/images';
 import { realmPatch } from '../lib/cloud';
 import { PomodoroChip } from './PomodoroBar';
+import { useMaterieActive } from '../lib/sections';
+import { clearDraft, saveDraft, type ItemDraft } from '../lib/drafts';
 
 interface Props {
   subjectId: string;
@@ -24,6 +26,8 @@ interface Props {
   chapterId: string;
   item: Item | null;
   onClose: () => void;
+  /** Bozza da riprendere (salvata prima di una ricarica) */
+  restored?: ItemDraft;
 }
 
 function BlobImage({ blob }: { blob: Blob }) {
@@ -36,10 +40,11 @@ function BlobImage({ blob }: { blob: Blob }) {
   );
 }
 
-export default function ItemModal({ subjectId, subjectRealmId, chapterId, item, onClose }: Props) {
+export default function ItemModal({ subjectId, subjectRealmId, chapterId, item, onClose, restored }: Props) {
   const isNew = !item;
   const [draft, setDraft] = useState<Item>(
     () =>
+      restored?.draft ??
       item ?? {
         id: uid(),
         subjectId,
@@ -54,7 +59,18 @@ export default function ItemModal({ subjectId, subjectRealmId, chapterId, item, 
         ...realmPatch(subjectRealmId),
       }
   );
-  const [proofText, setProofText] = useState(item?.proofText ?? '');
+  const [proofText, setProofText] = useState(restored?.proofText ?? item?.proofText ?? '');
+  const original = useMemo(() => JSON.stringify({ d: item ?? null, p: item?.proofText ?? '' }), [item]);
+  const dirty = useMemo(() => {
+    if (isNew) return !!(draft.title.trim() || draft.description.trim() || proofText.trim());
+    return JSON.stringify({ d: draft, p: proofText }) !== original;
+  }, [isNew, draft, proofText, original]);
+
+  // Salva la bozza a ogni modifica
+  useEffect(() => {
+    if (!dirty) return;
+    saveDraft({ subjectId, chapterId: draft.chapterId, isNew, draft, proofText, savedAt: Date.now() });
+  }, [dirty, draft, proofText, subjectId, isNew]);
   const [busy, setBusy] = useState(false);
 
   // Le foto si possono aggiungere anche su un elemento nuovo (sono legate al suo id)
@@ -64,26 +80,33 @@ export default function ItemModal({ subjectId, subjectRealmId, chapterId, item, 
     if (!draft.title.trim()) return;
     const payload = { ...draft, title: draft.title.trim(), proofText };
     await db.items.put(payload);
+    clearDraft();
     onClose();
   }, [draft, proofText, onClose]);
 
   const cancel = useCallback(async () => {
+    if (dirty && !confirm('Chiudere senza salvare? Le modifiche andranno perse.')) return;
+    clearDraft();
     // Elemento nuovo mai salvato: elimina le foto caricate nel frattempo
     if (isNew && !(await db.items.get(draft.id))) {
       await db.proofImages.where('itemId').equals(draft.id).delete();
     }
     onClose();
-  }, [isNew, draft.id, onClose]);
+  }, [isNew, draft.id, onClose, dirty]);
 
+  // Esc chiude la scheda solo se è visibile (non mentre sei su Igloo o Pomodoro)
+  const active = useMaterieActive();
   useEffect(() => {
+    if (!active) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && cancel();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [cancel]);
+  }, [cancel, active]);
 
   const remove = async () => {
     if (!item) return;
     if (!confirm('Eliminare questo elemento?')) return;
+    clearDraft();
     await db.items.delete(item.id);
     await db.proofImages.where('itemId').equals(item.id).delete();
     onClose();
