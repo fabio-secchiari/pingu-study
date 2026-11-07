@@ -224,7 +224,7 @@ export default function IglooPage() {
                   n.fromUserId === me ? 'bg-penguin-blue-soft/60 ml-8' : 'bg-penguin-pink-soft mr-8'
                 }`}
               >
-                <p>{n.text}</p>
+                <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{n.text}</p>
                 <p className="text-[11px] text-ink/50 mt-1">
                   {n.fromName} · {new Date(n.createdAt).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
                   {n.fromUserId === me && partner && n.readBy.includes(partner.userId) && ' · letto ❤'}
