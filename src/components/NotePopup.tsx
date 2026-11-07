@@ -56,7 +56,7 @@ export default function NotePopup() {
           </span>
         </div>
         <p className="text-sm text-ink/60">Un bigliettino da {note.fromName}</p>
-        <p className="text-lg font-semibold whitespace-pre-wrap">{note.text}</p>
+        <p className="text-lg font-semibold whitespace-pre-wrap [overflow-wrap:anywhere] max-h-[50vh] overflow-y-auto">{note.text}</p>
         <button onClick={markRead} className="px-6 py-3 rounded-2xl bg-penguin-pink text-white font-medium hover:bg-penguin-pink-dark">
           Letto ❤
         </button>
