@@ -1,5 +1,5 @@
 import katex from 'katex';
-import { SNIPPETS } from './editor/latexSuite';
+import { AUTO_COMMANDS, SNIPPETS } from './editor/latexSuite';
 
 /** Corpo dello snippet "pulito" per l'anteprima: i campi diventano un esempio leggibile. */
 function preview(body: string) {
@@ -24,7 +24,7 @@ function Tex({ src }: { src: string }) {
 const GROUPS: { title: string; emoji: string; triggers: string[] }[] = [
   { title: 'Frazioni, radici e potenze', emoji: '🧮', triggers: ['//', 'sq', 'sr', 'cb', 'rd', 'ee'] },
   { title: 'Limiti, somme e integrali', emoji: '♾️', triggers: ['lim', 'sum', 'prod', 'dint', 'inf'] },
-  { title: 'Relazioni e frecce', emoji: '➡️', triggers: ['->', '=>', '<=>', '!=', '<=', '>=', '~~', 'xx', '**', '...'] },
+  { title: 'Relazioni e frecce', emoji: '➡️', triggers: ['->', '=>', '<=>', '!=', '/=', '<=', '>=', '~~', 'xx', '**', '...'] },
   { title: 'Insiemi e logica', emoji: '🧊', triggers: ['RR', 'NN', 'ZZ', 'QQ', 'CC', 'AA', 'EE', 'inn', 'notin', 'sub', 'cup', 'cap', 'set'] },
   { title: 'Valori assoluti, norme e stili', emoji: '🎀', triggers: ['abs', 'norm', 'bf', 'cal', 'text', 'ol', 'hat'] },
 ];
@@ -39,6 +39,7 @@ export function Kbd({ children }: { children: React.ReactNode }) {
 export default function CheatSheet({ compact = false }: { compact?: boolean }) {
   const byTrigger = new Map(SNIPPETS.map((s) => [s.trigger, s]));
   const greek = SNIPPETS.filter((s) => s.trigger.startsWith('@'));
+  const words = (list: string[]) => list.filter((w) => byTrigger.get(w)?.auto);
 
   return (
     <div className={compact ? 'space-y-3 text-sm' : 'space-y-5'}>
@@ -93,8 +94,42 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
         <p className="text-[13px] text-ink/60 mt-2">Maiuscola = lettera maiuscola: @d → δ, @D → Δ.</p>
       </section>
 
+      <section className="rounded-2xl bg-white border border-penguin-blue-soft p-3 space-y-2">
+        <h4 className="font-semibold">🔤 Parole che diventano comandi</h4>
+        <p className="text-[13px] text-ink/70">
+          Dentro una formula scrivi il nome del comando <b>senza</b> backslash e diventa un comando da solo, con le graffe già
+          aperte se servono: <Kbd>bar</Kbd> → <Tex src="\bar{x}" />, <Kbd>tilde</Kbd> → <Tex src="\tilde{x}" />,{' '}
+          <Kbd>alpha</Kbd> → <Tex src="\alpha" />, <Kbd>sin</Kbd> → <Tex src="\sin" />. Dentro <code>{'\\text{…}'}</code>{' '}
+          le parole restano parole.
+        </p>
+        {!compact && (
+          <div className="space-y-1.5 text-[13px]">
+            <p>
+              <b>Con graffe:</b>{' '}
+              {[...words(AUTO_COMMANDS.oneArg), ...words(AUTO_COMMANDS.twoArgs)].map((w) => (
+                <span key={w} className="inline-block mr-1 mb-1">
+                  <Kbd>{w}</Kbd>
+                </span>
+              ))}
+            </p>
+            <p>
+              <b>Simboli e funzioni:</b>{' '}
+              {words(AUTO_COMMANDS.symbols).map((w) => (
+                <span key={w} className="inline-block mr-1 mb-1">
+                  <Kbd>{w}</Kbd>
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
+      </section>
+
       <section className="rounded-2xl bg-white border border-penguin-blue-soft p-3 space-y-1">
         <h4 className="font-semibold mb-1">🪄 Automatici</h4>
+        <p>
+          <Kbd>^</Kbd> e <Kbd>_</Kbd> aprono subito le graffe: <Kbd>x^2</Kbd> → <Tex src="x^{2}" />. Per uscire premi{' '}
+          <Kbd>Tab</Kbd> oppure scrivi <Kbd>{'}'}</Kbd>
+        </p>
         <p>
           <Kbd>x1</Kbd> → <Tex src="x_1" /> &nbsp; una lettera seguita da un numero diventa un pedice
         </p>
