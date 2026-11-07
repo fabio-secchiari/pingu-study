@@ -135,6 +135,8 @@ export interface Snip {
   where: 'math' | 'text' | 'any';
   /** Se true il trigger non deve seguire una lettera o un backslash (es. "inf" dentro "\infty"). */
   word?: boolean;
+  /** Parola-comando automatica (vedi AUTO_COMMANDS) */
+  auto?: boolean;
 }
 
 export const SNIPPETS: Snip[] = [
@@ -174,6 +176,7 @@ export const SNIPPETS: Snip[] = [
   { trigger: '=>', body: '\\implies', where: 'math' },
   { trigger: '<=>', body: '\\iff', where: 'math' },
   { trigger: '!=', body: '\\neq', where: 'math' },
+  { trigger: '/=', body: '\\neq', where: 'math' },
   { trigger: '<=', body: '\\leq', where: 'math' },
   { trigger: '>=', body: '\\geq', where: 'math' },
   { trigger: '~~', body: '\\sim', where: 'math' },
@@ -191,13 +194,63 @@ export const SNIPPETS: Snip[] = [
   ].map(([k, v]): Snip => ({ trigger: '@' + k, body: '\\' + v, where: 'math' })),
 ];
 
+/**
+ * Parole che diventano comandi da sole (stile LaTeX Suite): dentro una formula scrivi
+ * "bar" e diventa \bar{}, "alpha" diventa \alpha, "sin" diventa \sin.
+ * Scrivendo il backslash a mano (\bar) non succede nulla di automatico.
+ */
+const CMD_SYMBOLS = [
+  'alpha', 'beta', 'gamma', 'Gamma', 'delta', 'Delta', 'epsilon', 'varepsilon', 'zeta', 'eta', 'theta',
+  'vartheta', 'Theta', 'iota', 'kappa', 'lambda', 'Lambda', 'mu', 'nu', 'xi', 'Xi', 'pi', 'Pi', 'rho',
+  'varrho', 'sigma', 'Sigma', 'tau', 'upsilon', 'Upsilon', 'phi', 'varphi', 'Phi', 'chi', 'psi', 'Psi',
+  'omega', 'Omega',
+  'sin', 'cos', 'tan', 'cot', 'arcsin', 'arccos', 'arctan', 'log', 'ln', 'exp', 'max', 'min', 'sup',
+  'det', 'ker',
+  'partial', 'nabla', 'forall', 'exists', 'nexists', 'emptyset', 'varnothing', 'cdot', 'times', 'pm',
+  'mp', 'circ', 'equiv', 'approx', 'simeq', 'cong', 'propto', 'perp', 'neq', 'leq', 'geq', 'implies',
+  'impliedby', 'iff', 'to', 'mapsto', 'quad', 'qquad', 'ldots',
+  'vdots', 'langle', 'rangle', 'lfloor', 'rfloor', 'lceil', 'rceil',
+];
+const CMD_ONE_ARG = [
+  'bar', 'tilde', 'widetilde', 'vec', 'dot', 'ddot', 'widehat', 'overline', 'underline', 'sqrt',
+  'mathbb', 'mathcal', 'mathbf', 'mathrm', 'mathscr', 'mathfrak', 'operatorname', 'boxed',
+];
+const CMD_TWO_ARGS = ['frac', 'dfrac', 'binom'];
+
+const taken = new Set(SNIPPETS.map((s) => s.trigger));
+for (const w of CMD_SYMBOLS)
+  if (!taken.has(w)) SNIPPETS.push({ trigger: w, body: '\\' + w, where: 'math', word: true, auto: true });
+for (const w of CMD_ONE_ARG)
+  if (!taken.has(w)) SNIPPETS.push({ trigger: w, body: '\\' + w + '{${1}}${2}', where: 'math', word: true, auto: true });
+for (const w of CMD_TWO_ARGS)
+  if (!taken.has(w))
+    SNIPPETS.push({ trigger: w, body: '\\' + w + '{${1}}{${2}}${3}', where: 'math', word: true, auto: true });
+
+export const AUTO_COMMANDS = { symbols: CMD_SYMBOLS, oneArg: CMD_ONE_ARG, twoArgs: CMD_TWO_ARGS };
+
+/** Un comando "nudo" (\alpha) ha bisogno di uno spazio dopo, altrimenti \alpha+b diventa \alphab. */
+const withSpace = (body: string) => (/\\[a-zA-Z]+$/.test(body) ? body + ' ' : body);
+
 // I trigger più lunghi hanno la precedenza ("<=>" prima di "=>")
 const ORDERED = [...SNIPPETS].sort((a, b) => b.trigger.length - a.trigger.length);
+
+/** True se la posizione è dentro un \text{...} (lì le parole restano parole). */
+function insideText(text: string, zoneFrom: number, pos: number): boolean {
+  const chunk = text.slice(zoneFrom, pos);
+  const i = chunk.lastIndexOf('\\text{');
+  if (i < 0) return false;
+  let depth = 0;
+  for (const ch of chunk.slice(i + 5)) {
+    if (ch === '{') depth++;
+    else if (ch === '}') depth--;
+  }
+  return depth > 0;
+}
 
 export const latexSnippets = EditorView.inputHandler.of((view, from, to, inserted) => {
   if (inserted.length !== 1 || from !== to) return false;
   const doc = view.state.doc;
-  const before = doc.sliceString(Math.max(0, from - 12), from) + inserted;
+  const before = doc.sliceString(Math.max(0, from - 20), from) + inserted;
   const fullText = doc.sliceString(0, from) + inserted + doc.sliceString(to);
   const pos = from + 1;
   const zone = zoneAt(fullText, pos);
@@ -217,8 +270,23 @@ export const latexSnippets = EditorView.inputHandler.of((view, from, to, inserte
     }
   }
 
+  // Scrivendo } davanti a una } già presente, ci si passa sopra invece di raddoppiarla
+  if (inMath && inserted === '}' && doc.sliceString(to, to + 1) === '}') {
+    view.dispatch({ selection: { anchor: to + 1 }, userEvent: 'input' });
+    return true;
+  }
+
+  // ^ e _ aprono subito le graffe: x^ -> x^{|}  (Tab per uscire)
+  if (inMath && (inserted === '^' || inserted === '_') && doc.sliceString(to, to + 1) !== '{') {
+    snippet(inserted + '{${1}}${2}')(view, null as any, from, to);
+    return true;
+  }
+
+  const inText = inMath && zone ? insideText(fullText, zone.from, pos) : false;
+
   for (const s of ORDERED) {
     if (!before.endsWith(s.trigger)) continue;
+    if (inText && s.word) continue;
     if (s.where === 'math' && !inMath) continue;
     if (s.where === 'text' && inMath) continue;
     if (s.word) {
@@ -226,7 +294,7 @@ export const latexSnippets = EditorView.inputHandler.of((view, from, to, inserte
       if (prev && /[a-zA-Z\\]/.test(prev)) continue;
     }
     const start = from - (s.trigger.length - 1);
-    snippet(s.body)(view, null as any, start, to);
+    snippet(withSpace(s.body))(view, null as any, start, to);
     return true;
   }
   return false;
