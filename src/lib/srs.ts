@@ -20,8 +20,9 @@ export function review(item: Item, grade: Grade, now = Date.now()): Partial<Item
     ease = Math.min(3, ease + 0.05);
   }
 
-  const status: StudyStatus =
-    grade === 'ancora' ? 'da-studiare' : interval >= 21 ? 'padroneggiato' : 'ripassato';
+  // Il colore è quello che dici tu: Non la so = 🔴, Così così = 🟡, La so = 🟢.
+  // La data del prossimo ripasso (sotto) continua a seguire la ripetizione spaziata.
+  const status: StudyStatus = grade === 'ancora' ? 'da-studiare' : grade === 'difficile' ? 'ripassato' : 'padroneggiato';
 
   return {
     ease,

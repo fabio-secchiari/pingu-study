@@ -150,9 +150,9 @@ export default function GuidePage() {
             <p className="font-semibold mb-1 mt-4">Nel ripasso</p>
             <ul className="text-sm divide-y divide-ink/5">
               <ShortcutRow keys={<Kbd>Spazio</Kbd>}>Gira la carta</ShortcutRow>
-              <ShortcutRow keys={<Kbd>1</Kbd>}>Ancora (torna fra poco)</ShortcutRow>
-              <ShortcutRow keys={<Kbd>2</Kbd>}>Difficile</ShortcutRow>
-              <ShortcutRow keys={<Kbd>3</Kbd>}>Lo so!</ShortcutRow>
+              <ShortcutRow keys={<Kbd>1</Kbd>}>🔴 Non la so</ShortcutRow>
+              <ShortcutRow keys={<Kbd>2</Kbd>}>🟡 Così così</ShortcutRow>
+              <ShortcutRow keys={<Kbd>3</Kbd>}>🟢 La so!</ShortcutRow>
             </ul>
           </div>
         </div>
@@ -196,27 +196,32 @@ export default function GuidePage() {
 
       <Section id="ripasso" emoji="🃏" title="Ripasso a flashcard">
         <p className="text-ink/80">
-          Nella materia premi <b>🃏 Ripasso</b>. Leggi il titolo, prova a ricordare l'enunciato (e la dimostrazione),
-          poi gira la carta e sii onesto:
+          Nella materia premi <b>🃏 Ripasso</b> e scegli <b>quali carte</b> vuoi: accendi uno o più colori (vedi subito
+          quante carte ci sono per ciascuno), scegli i capitoli e, se vuoi, solo quelle con dimostrazione. L'app si
+          ricorda la tua ultima scelta.
+        </p>
+        <p className="text-ink/80">
+          Leggi il titolo, prova a ricordare l'enunciato (e la dimostrazione), gira la carta e rispondi sinceramente: la
+          risposta <b>decide il colore</b> della carta.
         </p>
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
           <div className="p-3 rounded-2xl bg-rose-100 text-rose-800">
-            <b>Ancora</b>
-            <br />torna fra 10 minuti
+            <b>🔴 Non la so</b>
+            <br />diventa rossa e la riprovi a fine giro
           </div>
           <div className="p-3 rounded-2xl bg-amber-100 text-amber-800">
-            <b>Difficile</b>
-            <br />torna presto
+            <b>🟡 Così così</b>
+            <br />diventa gialla
           </div>
           <div className="p-3 rounded-2xl bg-emerald-100 text-emerald-800">
-            <b>Lo so!</b>
-            <br />torna sempre più tardi
+            <b>🟢 La so!</b>
+            <br />diventa verde
           </div>
         </div>
         <p className="text-sm text-ink/70">
-          Più volte sai una carta, più si allontana (1 giorno, 3 giorni, una settimana…). Dopo circa 3 settimane di
-          fila diventa 🟢 <b>padroneggiata</b>. Puoi ripassare solo le carte di oggi, solo i punti deboli o solo le
-          dimostrazioni.
+          Alla fine vedi il riepilogo (quante verdi, gialle e rosse) e puoi ripassare subito solo quelle rosse. Il
+          bottone <b>📅 Da ripassare oggi</b> invece lascia scegliere al pinguino: le carte mai ripassate e quelle che,
+          in base alle risposte passate, è ora di rivedere (più una carta la sai, più tardi torna).
         </p>
       </Section>
 
