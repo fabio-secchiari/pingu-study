@@ -3,6 +3,7 @@ import { db } from '../db';
 import { uid, type Profile, type StudySession, type Subject } from '../types';
 import { localDay } from '../lib/text';
 import { realmPatch } from '../lib/cloud';
+import { countsInHours } from '../lib/stats';
 
 interface Props {
   sessions: StudySession[];
@@ -43,8 +44,10 @@ export default function StudyCalendar({ sessions, subjects, me, mine, partner }:
 
   const filtered = useMemo(
     () =>
-      sessions.filter((s) =>
-        who === 'io' ? s.userId === me : who === 'partner' ? s.userId === partner?.userId : true
+      sessions.filter(
+        (s) =>
+          countsInHours(s) &&
+          (who === 'io' ? s.userId === me : who === 'partner' ? s.userId === partner?.userId : true)
       ),
     [sessions, who, me, partner?.userId]
   );

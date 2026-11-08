@@ -236,7 +236,7 @@ export default function GuidePage() {
             ⏭ non vale.
           </li>
           <li>
-            Il <b>calendario</b> in fondo alla pagina mostra quanto avete studiato ogni giorno, il monte ore e la media.
+            Il <b>calendario</b> in fondo alla pagina mostra quanto avete studiato ogni giorno, il monte ore e la media. Contano i pomodori e le ore aggiunte a mano; il ripasso a flashcard no, perché di solito lo fai già dentro un pomodoro.
             Con "+ Aggiungi ore" segni anche lo studio fatto senza timer.
           </li>
           <li>

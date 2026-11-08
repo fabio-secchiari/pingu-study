@@ -34,10 +34,16 @@ export function petMood(sessions: StudySession[]): { mood: 'happy' | 'sleepy' | 
   return { mood: 'sad', text: 'ha fame! Fate un pomodoro per dargli un pesciolino.' };
 }
 
+/**
+ * Conta nelle ore di studio? Il ripasso no: di solito lo fai durante un pomodoro, e
+ * contarlo di nuovo raddoppierebbe il tempo. Resta comunque nella serie di giorni.
+ */
+export const countsInHours = (s: StudySession) => s.kind !== 'ripasso';
+
 export function minutesBySubject(sessions: StudySession[], sinceMs: number) {
   const map: Record<string, number> = {};
   for (const s of sessions) {
-    if (s.endedAt < sinceMs) continue;
+    if (s.endedAt < sinceMs || !countsInHours(s)) continue;
     const k = s.subjectId ?? '';
     map[k] = (map[k] ?? 0) + s.minutes;
   }
