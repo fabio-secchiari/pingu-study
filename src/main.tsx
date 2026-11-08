@@ -4,8 +4,10 @@ import './index.css';
 import App from './App';
 import { registerSW } from 'virtual:pwa-register';
 import { migrateFromLocalDb } from './lib/migrate';
+import { keepSyncAlive } from './lib/keepSyncAlive';
 
 registerSW({ immediate: true });
+keepSyncAlive();
 
 // Chiede al browser di non cancellare i dati locali (Safari li elimina dopo 7 giorni di inattività
 // se la PWA non è installata nella schermata Home).
