@@ -1,6 +1,7 @@
 import katex from 'katex';
 import { AUTO_COMMANDS, SNIPPETS } from './editor/latexSuite';
-import { katexOptions } from '../lib/katexMacros';
+import { argCount, katexOptions } from '../lib/katexMacros';
+import { useIgloo } from '../lib/cloud';
 
 /** Corpo dello snippet "pulito" per l'anteprima: i campi diventano un esempio leggibile. */
 function preview(body: string) {
@@ -9,7 +10,8 @@ function preview(body: string) {
     .replace(/\$\{\d+\}$/, '') // l'ultimo campo vuoto in fondo è solo la posizione del cursore
     .replace(/\\text\{\$\{\d+\}\}/g, '\\text{testo}')
     .replace(/\$\{(\d+)(?::([^}]*))?\}/g, (_m, n, def) => def ?? letters[n] ?? 'x')
-    .replace(/\n/g, ' ');
+    .replace(/\n/g, ' ')
+    .replace(/\\\\([{}])/g, '\\$1'); // "\\{" negli snippet è un \{ vero
 }
 
 function Tex({ src }: { src: string }) {
@@ -52,6 +54,9 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
   const byTrigger = new Map(SNIPPETS.map((s) => [s.trigger, s]));
   const greek = SNIPPETS.filter((s) => s.trigger.startsWith('@'));
   const words = (list: string[]) => list.filter((w) => byTrigger.get(w)?.auto);
+  const igloo = useIgloo();
+  const myCmds = igloo.customCommands ?? [];
+  const mySnips = igloo.customSnippets ?? [];
 
   return (
     <div className={compact ? 'space-y-3 text-sm' : 'space-y-5'}>
@@ -66,6 +71,33 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
           saltare al campo successivo (es. dal numeratore al denominatore).
         </p>
       </div>
+
+      {(myCmds.length > 0 || mySnips.length > 0) && (
+        <section className="rounded-2xl bg-white border border-penguin-pink/50 p-3 space-y-1.5">
+          <h4 className="font-semibold">⭐ I vostri comandi</h4>
+          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+            {mySnips.map((x) => (
+              <li key={'s' + x.trigger} className="flex items-center gap-2">
+                <Kbd>{x.trigger}</Kbd>
+                <span className="min-w-0 overflow-hidden">
+                  <Tex src={preview(x.body.replace(/\\([{}])/g, '\\\\$1'))} />
+                </span>
+              </li>
+            ))}
+            {myCmds.map((c) => {
+              const use = '\\' + c.name + Array.from({ length: argCount(c.body) }, (_, i) => `{${'xyz'[i] ?? 'x'}}`).join('');
+              return (
+                <li key={'c' + c.name} className="flex items-center gap-2">
+                  <code className="text-penguin-pink-dark">{use}</code>
+                  <span className="text-ink/40">→</span>
+                  <Tex src={use} />
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-[12px] text-ink/50">Si cambiano in Impostazioni → Comandi LaTeX personali.</p>
+        </section>
+      )}
 
       <div className={`grid gap-3 ${compact ? '' : 'sm:grid-cols-2'}`}>
         {GROUPS.map((g) => (

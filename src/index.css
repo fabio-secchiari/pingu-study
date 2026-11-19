@@ -40,6 +40,7 @@ body {
 .cm-md-heading { font-weight: 700; color: #2f6aa3; }
 .cm-md-quote { color: #8a4fd1; }
 .cm-md-link { color: #5A9BD4; text-decoration: underline; text-decoration-style: dotted; }
+.cm-latex-error { text-decoration: underline wavy #e5484d; text-decoration-skip-ink: none; text-underline-offset: 3px; background: rgb(229 72 77 / 0.06); }
 .cm-snippetField { background: #FDEBF2; border-radius: 3px; }
 
 /* ---------- Testo renderizzato ---------- */

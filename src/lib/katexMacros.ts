@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react';
+
 /**
  * Comandi in più per KaTeX: quelli che KaTeX non conosce ma che si usano spesso
  * (pacchetti physics, amsthm, notazione italiana) e qualche "nome sbagliato" comune
@@ -87,6 +89,46 @@ export const KATEX_MACROS: Record<string, string> = {
   '\\EUR': '\\text{€}',
 };
 
+/* ---------- Comandi personali (dalle impostazioni dell'igloo) ---------- */
+
+let userMacros: Record<string, string> = {};
+let version = 0;
+const listeners = new Set<() => void>();
+
+/** Numero di argomenti usati nel corpo (#1, #2…). */
+export const argCount = (body: string) => Math.max(0, ...[...body.matchAll(/#(\d)/g)].map((m) => +m[1]));
+
+export const validCommandName = (name: string) => /^[a-zA-Z]+$/.test(name);
+
+export function setUserMacros(list: { name: string; body: string }[] | undefined) {
+  const next: Record<string, string> = {};
+  for (const c of list ?? []) {
+    const name = c.name.trim().replace(/^\\/, '');
+    if (validCommandName(name) && c.body.trim()) next['\\' + name] = c.body;
+  }
+  if (JSON.stringify(next) === JSON.stringify(userMacros)) return;
+  userMacros = next;
+  version++;
+  listeners.forEach((l) => l());
+}
+
+/** Per useSyncExternalStore: cambia quando cambiano i comandi personali. */
+export const macrosStore = {
+  subscribe(l: () => void) {
+    listeners.add(l);
+    return () => listeners.delete(l);
+  },
+  getVersion: () => version,
+};
+
+/** Si ri-renderizza quando cambiano i comandi personali. */
+export const useMacrosVersion = () => useSyncExternalStore(macrosStore.subscribe, macrosStore.getVersion);
+
+/** Tutti i macro: quelli dell'app più quelli personali (che hanno la precedenza). */
+export function allMacros(): Record<string, string> {
+  return { ...KATEX_MACROS, ...userMacros };
+}
+
 /**
  * Opzioni comuni per KaTeX. I macro vengono copiati a ogni chiamata: così un \gdef
  * scritto in una nota non "contamina" le altre.
@@ -97,6 +139,6 @@ export function katexOptions(display = false) {
     strict: false,
     trust: false,
     displayMode: display,
-    macros: { ...KATEX_MACROS },
+    macros: allMacros(),
   };
 }

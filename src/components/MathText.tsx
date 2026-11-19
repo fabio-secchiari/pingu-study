@@ -1,7 +1,7 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
-import { katexOptions } from '../lib/katexMacros';
+import { katexOptions, useMacrosVersion } from '../lib/katexMacros';
 
 function renderLatex(src: string, display: boolean): string {
   try {
@@ -38,7 +38,8 @@ interface Props {
 }
 
 export default function MathText({ children, className, as = 'span' }: Props) {
-  const html = useMemo(() => buildHtml(children ?? ''), [children]);
+  const v = useMacrosVersion();
+  const html = useMemo(() => buildHtml(children ?? ''), [children, v]);
   const Tag = as as any;
   return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }

@@ -8,7 +8,7 @@ import 'katex/dist/katex.min.css';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../db';
 import { plain } from '../lib/text';
-import { KATEX_MACROS } from '../lib/katexMacros';
+import { allMacros, useMacrosVersion } from '../lib/katexMacros';
 
 /* ---------- plugin remark minimali (niente dipendenze extra) ---------- */
 
@@ -125,9 +125,6 @@ const components: Components = {
 };
 
 const remarkPlugins = [remarkGfm, remarkMath, remarkBreaks, remarkCallouts, remarkObsidianInline];
-const rehypePlugins: any[] = [
-  [rehypeKatex, { throwOnError: false, strict: false, macros: { ...KATEX_MACROS } }],
-];
 
 const safeUrl = (url: string) =>
   /^(item:|https?:|mailto:|#)/i.test(url) ? url : '';
@@ -139,6 +136,9 @@ interface Props {
 
 function MarkdownImpl({ children, className }: Props) {
   const src = useMemo(() => normalizeDisplayMath(children ?? ''), [children]);
+  useMacrosVersion(); // ri-renderizza quando cambiano i comandi personali
+  // Oggetto nuovo a ogni render: un \gdef in una nota non resta appiccicato alle altre
+  const rehypePlugins: any[] = [[rehypeKatex, { throwOnError: false, strict: false, macros: allMacros() }]];
   return (
     <div className={`prose-penguin ${className ?? ''}`}>
       <ReactMarkdown

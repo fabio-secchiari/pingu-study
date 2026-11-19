@@ -4,7 +4,8 @@ import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/vi
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import katex from 'katex';
-import { katexOptions } from '../../lib/katexMacros';
+import { katexOptions, useMacrosVersion } from '../../lib/katexMacros';
+import { checkFormula, latexLint, relint } from './latexLint';
 import Markdown from '../Markdown';
 import CheatSheet from '../CheatSheet';
 import {
@@ -75,7 +76,9 @@ export default function MathEditor({
   onChangeRef.current = onChange;
   onSubmitRef.current = onSubmit;
 
-  const [formula, setFormula] = useState<string | null>(null);
+  const [zone, setZone] = useState<{ text: string; from: number; display: boolean } | null>(null);
+  const formula = zone?.text ?? null;
+  const macrosVersion = useMacrosVersion();
   const [focused, setFocused] = useState(false);
   const [help, setHelp] = useState(false);
   const [preview, setPreview] = useState<boolean>(() => {
@@ -100,6 +103,7 @@ export default function MathEditor({
           EditorState.languageData.of(() => [{ closeBrackets: { brackets: ['(', '[', '{', '$'] } }]),
           closeBrackets(),
           latexHighlighter,
+          latexLint,
           latexSnippets,
           Prec.high(
             keymap.of([
@@ -116,7 +120,7 @@ export default function MathEditor({
             if (u.docChanged || u.selectionSet) {
               const text = u.state.doc.toString();
               const z = zoneAt(text, u.state.selection.main.head);
-              setFormula(z ? text.slice(z.from, z.to) : null);
+              setZone(z ? { text: text.slice(z.from, z.to), from: z.from, display: z.display } : null);
             }
             if (u.focusChanged) setFocused(u.view.hasFocus);
           }),
@@ -140,6 +144,32 @@ export default function MathEditor({
       view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
     }
   }, [value]);
+
+  // I comandi personali sono cambiati: ricontrolla gli errori
+  useEffect(() => {
+    if (viewRef.current) relint(viewRef.current);
+  }, [macrosVersion]);
+
+  // L'errore compare solo quando la formula resta ferma per un attimo (non mentre scrivi)
+  const [settled, setSettled] = useState<string | null>(null);
+  useEffect(() => {
+    const t = window.setTimeout(() => setSettled(formula), 700);
+    return () => window.clearTimeout(t);
+  }, [formula]);
+  const formulaError =
+    zone && zone.text.trim() && settled === zone.text ? checkFormula(zone.text, zone.display) : null;
+
+  const applyFix = () => {
+    const v = viewRef.current;
+    if (!v || !zone || !formulaError || formulaError.fix === undefined) return;
+    const from = zone.from + formulaError.from;
+    v.dispatch({
+      changes: { from, to: zone.from + formulaError.to, insert: formulaError.fix },
+      selection: { anchor: from + formulaError.fix.length },
+      userEvent: 'input',
+    });
+    v.focus();
+  };
 
   const togglePreview = () => {
     setPreview((p) => {
@@ -209,6 +239,28 @@ export default function MathEditor({
         <div className="mx-3 mb-2 px-3 py-2 rounded-xl bg-penguin-pink-soft/60 border border-penguin-pink/40 flex items-center gap-3 overflow-x-auto">
           <span className="text-[11px] font-medium text-penguin-pink-dark shrink-0">anteprima</span>
           <span dangerouslySetInnerHTML={{ __html: renderKatex(formula) }} />
+        </div>
+      )}
+      {formulaError && (
+        <div className="mx-3 mb-2 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 flex flex-wrap items-center gap-2 text-sm text-red-800">
+          <span aria-hidden>⚠️</span>
+          <span className="flex-1 min-w-0">{formulaError.message}</span>
+          {formulaError.fix !== undefined && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.preventDefault()} // non perdere il focus
+              onClick={applyFix}
+              className="px-2.5 py-1 rounded-lg bg-white border border-red-200 text-xs font-medium hover:bg-red-100"
+            >
+              {formulaError.fix ? (
+                <>
+                  Usa <code>{formulaError.fix}</code>
+                </>
+              ) : (
+                'Togli'
+              )}
+            </button>
+          )}
         </div>
       )}
 

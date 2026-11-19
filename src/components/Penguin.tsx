@@ -2,7 +2,7 @@ import { cosmeticsOf, type AccessoryId, type Cosmetics } from '../types';
 
 interface Props {
   color?: 'blue' | 'pink';
-  /** Cosmetici per slot (testa, viso, collo, pinna) */
+  /** Cosmetici per slot (testa, viso, collo, pinna destra e sinistra) */
   cosmetics?: Cosmetics;
   /** Scorciatoia per un singolo accessorio (vecchio formato) */
   accessory?: AccessoryId;
@@ -17,6 +17,19 @@ const PALETTE = {
 };
 
 const INK = '#1B2430';
+
+/** Stella a 5 punte centrata in (cx, cy). */
+function starPath(cx: number, cy: number, R: number, r: number) {
+  const pts = Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rad = i % 2 ? r : R;
+    return `${(cx + rad * Math.cos(a)).toFixed(1)} ${(cy + rad * Math.sin(a)).toFixed(1)}`;
+  });
+  return `M${pts.join(' L')} Z`;
+}
+
+/** Cose in testa che passano DIETRO la testa (archetti di cuffie e paraorecchie). */
+const BEHIND_HEAD = new Set(['cuffie', 'paraorecchie']);
 
 function Head({ id }: { id?: string }) {
   switch (id) {
@@ -111,6 +124,91 @@ function Head({ id }: { id?: string }) {
           <circle cx="96" cy="44" r="3.5" fill="#F5C542" />
         </g>
       );
+    case 'corna':
+      return (
+        <g stroke="#8B5A3C" strokeWidth="4" strokeLinecap="round" fill="none">
+          <path d="M44 28 q-4 -14 -14 -22 M34 12 l-10 -2 M38 18 q-2 -8 4 -14" />
+          <path d="M76 28 q4 -14 14 -22 M86 12 l10 -2 M82 18 q2 -8 -4 -14" />
+        </g>
+      );
+    case 'cowboy':
+      return (
+        <g>
+          <ellipse cx="60" cy="34" rx="46" ry="7" fill="#A0673A" />
+          <path d="M36 34 q0 -28 12 -28 q12 7 24 0 q12 0 12 28 z" fill="#B87A45" />
+          <rect x="36" y="25" width="48" height="5" fill="#6B3E1F" />
+        </g>
+      );
+    case 'cilindro':
+      return (
+        <g>
+          <rect x="40" y="-6" width="40" height="40" rx="3" fill={INK} />
+          <rect x="40" y="23" width="40" height="6" fill="#E85D75" />
+          <ellipse cx="60" cy="34" rx="34" ry="5" fill={INK} />
+        </g>
+      );
+    case 'elmetto':
+      return (
+        <g>
+          <path d="M24 38 q0 -32 36 -32 q36 0 36 32 z" fill="#F5C542" />
+          <rect x="56" y="6" width="8" height="30" rx="3" fill="#E0AE1E" />
+          <rect x="16" y="34" width="88" height="7" rx="3.5" fill="#E0AE1E" />
+        </g>
+      );
+    case 'chef':
+      return (
+        <g fill="#fff" stroke="#dfe5ee" strokeWidth="1.5">
+          <circle cx="42" cy="10" r="12" />
+          <circle cx="78" cy="10" r="12" />
+          <circle cx="60" cy="2" r="14" />
+          <rect x="36" y="14" width="48" height="22" rx="4" />
+        </g>
+      );
+    case 'paraorecchie':
+      return (
+        <g>
+          <path d="M16 60 q0 -56 44 -56 q44 0 44 56" fill="none" stroke="#E85D75" strokeWidth="4" />
+          <circle cx="14" cy="60" r="11" fill="#fff" stroke="#F8BBD0" strokeWidth="4" strokeDasharray="3 2" />
+          <circle cx="106" cy="60" r="11" fill="#fff" stroke="#F8BBD0" strokeWidth="4" strokeDasharray="3 2" />
+        </g>
+      );
+    case 'agrifoglio':
+      return (
+        <g transform="translate(80 26) rotate(-15)">
+          <path d="M0 0 q-8 -10 -18 -6 q4 2 2 6 q4 0 4 4 q6 -2 12 -4 z" fill="#2E8B57" />
+          <path d="M0 0 q8 -10 18 -6 q-4 2 -2 6 q-4 0 -4 4 q-6 -2 -12 -4 z" fill="#3BA36B" />
+          <circle cx="-3" cy="-2" r="3.5" fill="#E04848" />
+          <circle cx="3" cy="-3" r="3.5" fill="#E04848" />
+          <circle cx="0" cy="3" r="3.5" fill="#C93A3A" />
+        </g>
+      );
+    case 'stella':
+      return <path d={starPath(60, 2, 15, 6.5)} fill="#F5C542" stroke="#D9A21B" strokeWidth="1.5" strokeLinejoin="round" />;
+    case 'pirata':
+      return (
+        <g>
+          <path d="M14 38 q46 -58 92 0 q-46 -12 -92 0 z" fill={INK} />
+          <circle cx="60" cy="18" r="5" fill="#fff" />
+          <path d="M53 26 l14 4 M67 26 l-14 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="58" cy="17.5" r="1.2" fill={INK} />
+          <circle cx="62" cy="17.5" r="1.2" fill={INK} />
+        </g>
+      );
+    case 'fascia':
+      return (
+        <g>
+          <path d="M22 41 q38 -14 76 0 v-10 q-38 -14 -76 0 z" fill="#EC4F8A" />
+          <path d="M22 36 q38 -14 76 0" stroke="#fff" strokeWidth="2" fill="none" />
+        </g>
+      );
+    case 'elfo':
+      return (
+        <g>
+          <path d="M22 40 Q40 -2 80 6 Q102 12 114 26 Q96 22 94 40 Z" fill="#3BA36B" />
+          <rect x="18" y="35" width="84" height="10" rx="5" fill="#E04848" />
+          <circle cx="114" cy="27" r="5" fill="#F5C542" stroke="#D9A21B" strokeWidth="1" />
+        </g>
+      );
     default:
       return null;
   }
@@ -148,6 +246,52 @@ function Face({ id }: { id?: string }) {
         <g fill="none" stroke="#D9A21B" strokeWidth="2.5">
           <circle cx="74" cy="58" r="10" />
           <path d="M84 62 q6 16 -2 30" strokeWidth="1.5" />
+        </g>
+      );
+    case 'nasorosso':
+      return (
+        <g>
+          <circle cx="60" cy="71" r="7.5" fill="#E04848" />
+          <circle cx="57.5" cy="68.5" r="2" fill="#fff" opacity="0.7" />
+        </g>
+      );
+    case 'baffi':
+      return (
+        <path
+          d="M60 76 q-8 -6 -16 0 q-6 4 -10 -2 q2 9 12 8 q8 -1 14 -5 q6 4 14 5 q10 1 12 -8 q-4 6 -10 2 q-8 -6 -16 0 z"
+          fill="#5A3B2A"
+        />
+      );
+    case 'cuori':
+      return (
+        <g>
+          <path d="M46 67 l-11 -10 a6 6 0 0 1 11 -8 a6 6 0 0 1 11 8 z" fill="#EC4F8A" stroke="#C93A73" strokeWidth="1.5" opacity="0.9" />
+          <path d="M74 67 l-11 -10 a6 6 0 0 1 11 -8 a6 6 0 0 1 11 8 z" fill="#EC4F8A" stroke="#C93A73" strokeWidth="1.5" opacity="0.9" />
+          <path d="M57 56 h6" stroke="#C93A73" strokeWidth="2" />
+        </g>
+      );
+    case 'benda':
+      return (
+        <g>
+          <path d="M18 46 L100 64" stroke={INK} strokeWidth="2.5" />
+          <ellipse cx="74" cy="59" rx="10" ry="9" fill={INK} />
+        </g>
+      );
+    case 'barba':
+      return (
+        <path
+          d="M28 74 q4 34 32 38 q28 -4 32 -38 q-8 10 -16 6 q-6 6 -16 2 q-10 4 -16 -2 q-8 4 -16 -6 z"
+          fill="#fff"
+          stroke="#aebccb"
+          strokeWidth="2"
+        />
+      );
+    case 'maschera':
+      return (
+        <g>
+          <rect x="12" y="53" width="96" height="7" rx="3" fill="#5A9BD4" />
+          <rect x="31" y="47" width="58" height="22" rx="11" fill="#F4A261" stroke={INK} strokeWidth="2.5" />
+          <path d="M38 53 q6 -3 12 0" stroke="#fff" strokeWidth="2.5" fill="none" opacity="0.7" />
         </g>
       );
     default:
@@ -200,12 +344,89 @@ function Neck({ id }: { id?: string }) {
           <path d="M60 104 l2 4 l4 0 l-3 3 l1 4 l-4 -2 l-4 2 l1 -4 l-3 -3 l4 0 z" fill="#D9A21B" />
         </g>
       );
+    case 'cravatta':
+      return (
+        <g>
+          <path d="M44 85 l16 5 l-8 8 z M76 85 l-16 5 l8 8 z" fill="#fff" stroke="#dfe5ee" strokeWidth="1" />
+          <path d="M55 88 h10 l-2 7 h-6 z" fill="#3E5BA8" />
+          <path d="M57 95 h6 l5 22 l-8 8 l-8 -8 z" fill="#4A6FC9" />
+          <path d="M55 104 l10 -4 M54 111 l12 -5" stroke="#F5C542" strokeWidth="1.5" />
+        </g>
+      );
+    case 'lucine':
+      return (
+        <g>
+          <path d="M24 88 q36 18 72 0" fill="none" stroke="#2E6B3A" strokeWidth="2" />
+          {['#E04848', '#F5C542', '#5A9BD4', '#3BA36B', '#EC4F8A', '#F4A261', '#7F77DD'].map((col, i) => {
+            const t = (i + 0.5) / 7;
+            const x = 24 + 72 * t;
+            const y = 88 * (1 - t) ** 2 + 2 * (1 - t) * t * 106 + 88 * t * t;
+            return <ellipse key={i} cx={x} cy={y + 4} rx="3" ry="4.5" fill={col} transform={`rotate(${(t - 0.5) * -50} ${x} ${y})`} />;
+          })}
+        </g>
+      );
+    case 'sciarpaNatale':
+      return (
+        <g>
+          <path d="M22 88 q38 16 76 0 v10 q-38 16 -76 0 z" fill="#C93A3A" />
+          {[32, 46, 60, 74, 88].map((x) => {
+            const t = (x - 22) / 76;
+            const y = 88 + 32 * t * (1 - t);
+            return <rect key={x} x={x - 2.5} y={y} width="5" height="10" fill="#fff" />;
+          })}
+          <rect x="70" y="94" width="11" height="26" rx="4" fill="#C93A3A" />
+          <path d="M70 104 h11 M70 112 h11" stroke="#3BA36B" strokeWidth="3" />
+        </g>
+      );
+    case 'stetoscopio':
+      return (
+        <g fill="none" stroke="#4a5866" strokeWidth="3" strokeLinecap="round">
+          <path d="M38 84 q2 18 22 22 q20 -4 22 -22" />
+          <path d="M60 106 v8" />
+          <circle cx="60" cy="119" r="6" fill="#c9d6e3" strokeWidth="2" />
+        </g>
+      );
+    case 'collanafiori':
+      return (
+        <g>
+          {Array.from({ length: 7 }, (_, i) => {
+            const t = i / 6;
+            const x = 26 + 68 * t;
+            const y = 88 * (1 - t) ** 2 + 2 * (1 - t) * t * 110 + 88 * t * t;
+            const col = ['#EC7FA9', '#FFF1B8', '#B9A7F0'][i % 3];
+            return (
+              <g key={i}>
+                {[0, 72, 144, 216, 288].map((a) => (
+                  <circle key={a} cx={x + 4 * Math.cos((a * Math.PI) / 180)} cy={y + 4 * Math.sin((a * Math.PI) / 180)} r="3.4" fill={col} />
+                ))}
+                <circle cx={x} cy={y} r="2.2" fill="#F5C542" />
+              </g>
+            );
+          })}
+        </g>
+      );
+    case 'bandana':
+      return (
+        <g>
+          <path d="M26 86 q34 14 68 0 l-34 30 z" fill="#E04848" />
+          {[
+            [46, 94],
+            [60, 97],
+            [74, 94],
+            [53, 104],
+            [67, 104],
+            [60, 110],
+          ].map(([x, y]) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill="#fff" />
+          ))}
+        </g>
+      );
     default:
       return null;
   }
 }
 
-function Flipper({ id }: { id?: string }) {
+function Flipper({ id, mirrored = false }: { id?: string; mirrored?: boolean }) {
   switch (id) {
     case 'pesce':
       return (
@@ -220,7 +441,17 @@ function Flipper({ id }: { id?: string }) {
         <g transform="translate(98 84) rotate(-10)">
           <rect x="0" y="0" width="22" height="28" rx="2" fill="#E85D75" />
           <rect x="3" y="3" width="16" height="22" rx="1" fill="#fff" opacity="0.25" />
-          <text x="11" y="18" fontSize="10" textAnchor="middle" fill="#fff" fontFamily="serif">∫</text>
+          <text
+            x="11"
+            y="18"
+            fontSize="10"
+            textAnchor="middle"
+            fill="#fff"
+            fontFamily="serif"
+            transform={mirrored ? 'translate(22 0) scale(-1 1)' : undefined}
+          >
+            ∫
+          </text>
         </g>
       );
     case 'matita':
@@ -258,6 +489,171 @@ function Flipper({ id }: { id?: string }) {
           <path d="M1 3 q3 -4 6 0 q-3 3 -6 0" fill="#B8304E" />
         </g>
       );
+    case 'valigetta':
+      return (
+        <g>
+          <path d="M104 100 v-6 h12 v6" fill="none" stroke="#5A3B2A" strokeWidth="3" />
+          <rect x="96" y="100" width="28" height="20" rx="3" fill="#8B5A3C" />
+          <rect x="96" y="106" width="28" height="3" fill="#6B3E1F" />
+          <rect x="108" y="104" width="4" height="6" rx="1" fill="#F5C542" />
+        </g>
+      );
+    case 'chitarra':
+      return (
+        <g transform="translate(98 106) rotate(-35)">
+          <rect x="-2.5" y="-46" width="5" height="34" fill="#8B5A3C" />
+          <rect x="-4" y="-54" width="8" height="9" rx="2" fill="#5A3B2A" />
+          <circle cx="0" cy="-12" r="8" fill="#E08A43" />
+          <circle cx="0" cy="0" r="11" fill="#E08A43" />
+          <circle cx="0" cy="-6" r="3.5" fill="#5A3B2A" />
+          <rect x="-5" y="3" width="10" height="2.5" fill="#5A3B2A" />
+          <path d="M-1 -46 v49 M1 -46 v49" stroke="#fff" strokeWidth="0.4" opacity="0.8" />
+        </g>
+      );
+    case 'orologio':
+      return (
+        <g>
+          <rect x="96" y="97" width="20" height="7" rx="2" fill="#8B5A3C" />
+          <circle cx="106" cy="100.5" r="6.5" fill="#fff" stroke="#D9A21B" strokeWidth="2" />
+          <path d="M106 100.5 v-3.5 M106 100.5 h2.5" stroke={INK} strokeWidth="1.2" strokeLinecap="round" />
+        </g>
+      );
+    case 'bastoncino':
+      return (
+        <g transform="translate(108 70)" fill="none" strokeWidth="5" strokeLinecap="round">
+          <path d="M6 44 V8 a7 7 0 0 0 -14 0" stroke="#fff" />
+          <path d="M6 44 V8 a7 7 0 0 0 -14 0" stroke="#E04848" strokeDasharray="4 4" />
+        </g>
+      );
+    case 'regalo':
+      return (
+        <g>
+          <rect x="98" y="92" width="22" height="18" rx="2" fill="#E85D75" />
+          <rect x="107" y="92" width="4" height="18" fill="#F5C542" />
+          <rect x="98" y="99" width="22" height="4" fill="#F5C542" />
+          <path d="M109 92 q-9 -9 -11 -2 q2 4 11 2 q9 -9 11 -2 q-2 4 -11 2 z" fill="#F5C542" stroke="#D9A21B" strokeWidth="0.8" />
+        </g>
+      );
+    case 'calcolatrice':
+      return (
+        <g transform="translate(98 84) rotate(-8)">
+          <rect x="0" y="0" width="18" height="26" rx="3" fill="#4a5866" />
+          <rect x="3" y="3" width="12" height="6" rx="1" fill="#CDE8C5" />
+          {[0, 1, 2].flatMap((i) =>
+            [0, 1, 2].map((j) => <rect key={`${i}${j}`} x={3 + i * 4.5} y={12 + j * 4.5} width="3" height="3" rx="0.6" fill="#e8eef5" />)
+          )}
+        </g>
+      );
+    case 'ombrello':
+      return (
+        <g>
+          <path d="M106 38 v62 q0 6 -5 6 q-4 0 -4 -4" fill="none" stroke="#5A3B2A" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M86 46 q20 -28 40 0 q-5 -4 -10 0 q-5 -4 -10 0 q-5 -4 -10 0 q-5 -4 -10 0 z" fill="#7C9CE0" />
+          <path d="M106 46 q0 -14 0 -26" stroke="#5E80C8" strokeWidth="1.5" />
+        </g>
+      );
+    case 'gelato':
+      return (
+        <g>
+          <path d="M100 92 l8 22 l8 -22 z" fill="#E9B872" />
+          <path d="M102 96 l10 8 M114 96 l-10 8" stroke="#C99A55" strokeWidth="1" />
+          <circle cx="108" cy="88" r="8" fill="#F8BBD0" />
+          <circle cx="108" cy="79" r="6.5" fill="#A8E6CF" />
+          <circle cx="108" cy="71.5" r="2.5" fill="#E04848" />
+        </g>
+      );
+    case 'bacchetta':
+      return (
+        <g>
+          <path d="M104 104 L116 74" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+          <path d={starPath(117, 69, 8, 3.5)} fill="#F5C542" stroke="#D9A21B" strokeWidth="1" />
+          <circle cx="108" cy="64" r="1.5" fill="#F5C542" />
+          <circle cx="124" cy="78" r="1.2" fill="#F5C542" />
+        </g>
+      );
+    case 'microfono':
+      return (
+        <g transform="translate(106 96) rotate(20)">
+          <rect x="-3" y="0" width="6" height="22" rx="2" fill={INK} />
+          <circle cx="0" cy="-4" r="7" fill="#c9d6e3" stroke="#8a96a3" strokeWidth="1.5" />
+          <path d="M-5 -6 h10 M-6 -3 h12 M-5 0 h10" stroke="#8a96a3" strokeWidth="0.8" />
+        </g>
+      );
+    case 'pallina':
+      return (
+        <g>
+          <path d="M108 78 v9" stroke="#C9A227" strokeWidth="1.2" />
+          <rect x="104.5" y="86" width="7" height="4" rx="1" fill="#D9A21B" />
+          <circle cx="108" cy="99" r="9.5" fill="#E04848" />
+          <path d="M99 99 q9 4 18 0" stroke="#fff" strokeWidth="1.5" fill="none" opacity="0.8" />
+          <path d="M103 94 q2 -3 5 -3" stroke="#fff" strokeWidth="2" fill="none" opacity="0.6" />
+        </g>
+      );
+    case 'caffe':
+      return (
+        <g transform="translate(98 86)">
+          <path d="M0 4 h18 l-2 22 h-14 z" fill="#fff" stroke="#c9d6e3" strokeWidth="1.2" />
+          <path d="M1 11 h16 l-0.6 7 h-14.8 z" fill="#C99A6B" />
+          <rect x="-1" y="0" width="20" height="5" rx="2" fill="#8B5A3C" />
+        </g>
+      );
+    case 'pizza':
+      return (
+        <g>
+          <path d="M98 84 l24 6 l-18 22 z" fill="#F5C542" />
+          <path d="M98 84 l24 6" stroke="#D9822B" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="106" cy="94" r="2.6" fill="#E04848" />
+          <circle cx="113" cy="94" r="2.4" fill="#E04848" />
+          <circle cx="106" cy="102" r="2.2" fill="#E04848" />
+        </g>
+      );
+    case 'righello':
+      return (
+        <g transform="translate(102 72) rotate(20)">
+          <rect x="0" y="0" width="7" height="40" rx="1" fill="#F5D76E" stroke="#D9A21B" strokeWidth="0.8" />
+          {Array.from({ length: 9 }, (_, i) => (
+            <path key={i} d={`M0 ${4 + i * 4} h${i % 2 ? 2.5 : 4}`} stroke="#8a6a12" strokeWidth="0.8" />
+          ))}
+        </g>
+      );
+    case 'lanterna':
+      return (
+        <g>
+          <path d="M102 82 q6 -9 12 0" fill="none" stroke="#4a5866" strokeWidth="2" />
+          <rect x="100" y="82" width="16" height="4" rx="1" fill="#4a5866" />
+          <rect x="101" y="86" width="14" height="16" fill="#FFE9A8" stroke="#4a5866" strokeWidth="1.5" />
+          <ellipse cx="108" cy="95" rx="2.5" ry="4" fill="#F4A261" />
+          <rect x="100" y="102" width="16" height="4" rx="1" fill="#4a5866" />
+        </g>
+      );
+    case 'pupazzo':
+      return (
+        <g>
+          <circle cx="108" cy="105" r="9" fill="#fff" stroke="#dfe5ee" strokeWidth="1.2" />
+          <circle cx="108" cy="91" r="6.5" fill="#fff" stroke="#dfe5ee" strokeWidth="1.2" />
+          <rect x="103" y="96" width="10" height="2.6" rx="1" fill="#E04848" />
+          <circle cx="106" cy="90" r="0.9" fill={INK} />
+          <circle cx="110" cy="90" r="0.9" fill={INK} />
+          <path d="M108 92 l4 1 l-4 1 z" fill="#F4A261" />
+          <rect x="103.5" y="80" width="9" height="5" fill={INK} />
+          <rect x="101.5" y="84.5" width="13" height="2" fill={INK} />
+        </g>
+      );
+    case 'calza':
+      return (
+        <g transform="translate(98 86)">
+          <path d="M2 0 h12 v16 q0 4 4 6 l4 2 q4 3 1 7 q-3 3 -8 0 l-10 -6 q-3 -2 -3 -6 z" fill="#E04848" />
+          <rect x="0" y="-3" width="16" height="6" rx="2" fill="#fff" />
+        </g>
+      );
+    case 'racchetta':
+      return (
+        <g transform="translate(104 108) rotate(-25)">
+          <rect x="-2" y="0" width="4" height="14" rx="1.5" fill="#5A3B2A" />
+          <ellipse cx="0" cy="-12" rx="9" ry="12" fill="#fff" fillOpacity="0.5" stroke="#3BA36B" strokeWidth="3" />
+          <path d="M-4 -22 v20 M0 -24 v24 M4 -22 v20 M-8 -16 h16 M-9 -11 h18 M-8 -6 h16" stroke="#9aa8b8" strokeWidth="0.6" />
+        </g>
+      );
     default:
       return null;
   }
@@ -276,7 +672,7 @@ export default function Penguin({ color = 'blue', cosmetics, accessory, mood = '
       aria-hidden={title ? undefined : true}
     >
       {title && <title>{title}</title>}
-      {look.testa === 'cuffie' && <Head id="cuffie" />}
+      {look.testa && BEHIND_HEAD.has(look.testa) && <Head id={look.testa} />}
       <ellipse cx="60" cy="78" rx="50" ry="60" fill={c.body} />
       <ellipse cx="60" cy="95" rx="32" ry="40" fill="#FDFDFF" />
       <ellipse cx="14" cy="90" rx="10" ry="24" fill={c.wing} />
@@ -317,9 +713,13 @@ export default function Penguin({ color = 'blue', cosmetics, accessory, mood = '
 
       <Neck id={look.collo} />
       <Face id={look.viso} />
-      {look.testa !== 'cuffie' && <Head id={look.testa} />}
+      {!(look.testa && BEHIND_HEAD.has(look.testa)) && <Head id={look.testa} />}
       <ellipse cx="106" cy="90" rx="10" ry="24" fill={c.wing} />
       <Flipper id={look.pinna} />
+      {/* Pinna sinistra: stessi oggetti, specchiati */}
+      <g transform="translate(120 0) scale(-1 1)">
+        <Flipper id={look.pinnaSx} mirrored />
+      </g>
     </svg>
   );
 }

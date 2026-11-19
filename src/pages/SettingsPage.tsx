@@ -5,6 +5,7 @@ import { downloadJson, exportBackup, importBackup } from '../lib/backup';
 import { parseJsonLoose } from '../lib/schema';
 import { useCurrentUser } from '../lib/cloud';
 import { notify, notifyState, requestNotifications, type NotifyState } from '../lib/notify';
+import CustomLatexSettings from '../components/CustomLatexSettings';
 
 const LLM_PROMPT = `Sei un assistente che estrae contenuti matematici da appunti/dispense PDF e li converte in un JSON rigorosamente conforme allo schema qui sotto.
 
@@ -185,6 +186,8 @@ export default function SettingsPage() {
           </>
         )}
       </section>
+
+      <CustomLatexSettings />
 
       <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
         <h3 className="font-semibold">Backup completo</h3>

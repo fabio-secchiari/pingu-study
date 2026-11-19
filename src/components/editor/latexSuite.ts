@@ -154,7 +154,7 @@ export const SNIPPETS: Snip[] = [
   { trigger: 'dint', body: '\\int_{${1:a}}^{${2:b}} ${3} \\, d${4:x}', where: 'math', word: true },
   { trigger: 'norm', body: '\\lVert ${1} \\rVert${2}', where: 'math', word: true },
   { trigger: 'abs', body: '\\lvert ${1} \\rvert${2}', where: 'math', word: true },
-  { trigger: 'set', body: '\\{ ${1} \\}${2}', where: 'math', word: true },
+  { trigger: 'set', body: '\\\\{ ${1} \\\\}${2}', where: 'math', word: true },
   { trigger: 'bf', body: '\\mathbf{${1}}${2}', where: 'math', word: true },
   { trigger: 'cal', body: '\\mathcal{${1}}${2}', where: 'math', word: true },
   { trigger: 'text', body: '\\text{${1}}${2}', where: 'math', word: true },
@@ -251,7 +251,28 @@ export const AUTO_COMMANDS = { symbols: CMD_SYMBOLS, oneArg: CMD_ONE_ARG, twoArg
 const withSpace = (body: string) => (/\\[a-zA-Z]+$/.test(body) ? body + ' ' : body);
 
 // I trigger più lunghi hanno la precedenza ("<=>" prima di "=>")
-const ORDERED = [...SNIPPETS].sort((a, b) => b.trigger.length - a.trigger.length);
+const byLength = (list: Snip[]) => [...list].sort((a, b) => b.trigger.length - a.trigger.length);
+let ORDERED = byLength(SNIPPETS);
+
+/* ---------- Scorciatoie personali (dalle impostazioni dell'igloo) ---------- */
+
+export let USER_SNIPPETS: Snip[] = [];
+
+/** Negli snippet di CodeMirror "\{" vuol dire "{": per avere \{ davvero va scritto "\\{". */
+const escapeBraces = (body: string) => body.replace(/\\([{}])/g, '\\\\$1');
+
+/** Le scorciatoie personali vincono su quelle dell'app con lo stesso trigger. */
+export function setUserSnippets(list: { trigger: string; body: string; anywhere?: boolean }[] | undefined) {
+  USER_SNIPPETS = (list ?? [])
+    .filter((x) => x.trigger.trim() && x.body)
+    .map((x) => {
+      const trigger = x.trigger.trim();
+      const body = escapeBraces(x.body);
+      return { trigger, body, where: x.anywhere ? 'any' : 'math', word: /^[a-zA-Z]/.test(trigger) } as Snip;
+    });
+  const mine = new Set(USER_SNIPPETS.map((x) => x.trigger));
+  ORDERED = [...byLength(USER_SNIPPETS), ...byLength(SNIPPETS.filter((x) => !mine.has(x.trigger)))];
+}
 
 /** True se la posizione è dentro un \text{...} (lì le parole restano parole). */
 function insideText(text: string, zoneFrom: number, pos: number): boolean {
