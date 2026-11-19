@@ -7,6 +7,7 @@ import { fishOf, subjectRows } from '../lib/stats';
 import { fmtMinutes } from '../components/StudyCalendar';
 import { fmtClock, usePomodoro } from '../lib/pomodoro';
 import StudyCalendar from '../components/StudyCalendar';
+import { activeEvents } from '../lib/events';
 
 export default function PomodoroPage() {
   const pomo = usePomodoro();
@@ -50,7 +51,7 @@ export default function PomodoroPage() {
           )}
           {fishPop > 0 && (
             <span key={fishPop} className="anim-float absolute -top-2 text-3xl" style={{ animation: 'float-up 1.6s ease-out forwards' }}>
-              🐟
+              🐟{activeEvents()[0]?.def.currency.emoji}
             </span>
           )}
         </div>
