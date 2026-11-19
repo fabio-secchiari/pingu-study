@@ -101,14 +101,21 @@ export interface Note extends CloudFields {
   readBy: string[];
 }
 
-export type CosmeticSlot = 'testa' | 'viso' | 'collo' | 'pinna';
+/** Dove si indossa un cosmetico. Gli oggetti "pinna" si possono tenere in tutte e due le pinne. */
+export type CosmeticKind = 'testa' | 'viso' | 'collo' | 'pinna';
+/** Posti sul pinguino: `pinna` è la destra (vista da chi guarda), `pinnaSx` la sinistra. */
+export type CosmeticSlot = CosmeticKind | 'pinnaSx';
 
 export const SLOT_LABELS: Record<CosmeticSlot, string> = {
   testa: 'Testa',
   viso: 'Viso',
   collo: 'Collo',
-  pinna: 'In pinna',
+  pinnaSx: 'Pinna sinistra',
+  pinna: 'Pinna destra',
 };
+
+/** Che tipo di oggetto va in un certo posto. */
+export const kindOfSlot = (slot: CosmeticSlot): CosmeticKind => (slot === 'pinnaSx' ? 'pinna' : slot);
 
 /** Cosmetici del pinguino: si sbloccano con i pesciolini (1 pomodoro = 1 🐟). */
 export const COSMETICS = [
@@ -124,17 +131,40 @@ export const COSMETICS = [
   { id: 'mago', slot: 'testa', label: 'Cappello da mago', fish: 60 },
   { id: 'corona', slot: 'testa', label: 'Coroncina', fish: 75 },
   { id: 'tocco', slot: 'testa', label: 'Tocco da laurea', fish: 100 },
+  { id: 'agrifoglio', slot: 'testa', label: 'Rametto di agrifoglio', fish: 5, xmas: true },
+  { id: 'fascia', slot: 'testa', label: 'Fascetta sportiva', fish: 6 },
+  { id: 'paraorecchie', slot: 'testa', label: 'Paraorecchie', fish: 8, xmas: true },
+  { id: 'corna', slot: 'testa', label: 'Corna da renna', fish: 10, xmas: true },
+  { id: 'elmetto', slot: 'testa', label: 'Elmetto da cantiere', fish: 12 },
+  { id: 'elfo', slot: 'testa', label: 'Cappello da elfo', fish: 12, xmas: true },
+  { id: 'stella', slot: 'testa', label: "Stella dell'albero", fish: 14, xmas: true },
+  { id: 'chef', slot: 'testa', label: 'Cappello da chef', fish: 16 },
+  { id: 'cowboy', slot: 'testa', label: 'Cappello da cowboy', fish: 18 },
+  { id: 'cilindro', slot: 'testa', label: 'Cilindro', fish: 20 },
+  { id: 'pirata', slot: 'testa', label: 'Cappello da pirata', fish: 22 },
   // Viso
   { id: 'guance', slot: 'viso', label: 'Guance a cuore', fish: 4 },
   { id: 'occhiali', slot: 'viso', label: 'Occhiali da studio', fish: 12 },
   { id: 'sole', slot: 'viso', label: 'Occhiali da sole', fish: 28 },
   { id: 'monocolo', slot: 'viso', label: 'Monocolo', fish: 55 },
+  { id: 'baffi', slot: 'viso', label: 'Baffoni', fish: 5 },
+  { id: 'nasorosso', slot: 'viso', label: 'Naso rosso da renna', fish: 6, xmas: true },
+  { id: 'benda', slot: 'viso', label: 'Benda da pirata', fish: 8 },
+  { id: 'cuori', slot: 'viso', label: 'Occhiali a cuore', fish: 10 },
+  { id: 'maschera', slot: 'viso', label: 'Maschera da sci', fish: 14, xmas: true },
+  { id: 'barba', slot: 'viso', label: 'Barba bianca', fish: 15, xmas: true },
   // Collo
   { id: 'sciarpa', slot: 'collo', label: 'Sciarpa', fish: 5 },
   { id: 'papillon', slot: 'collo', label: 'Papillon', fish: 10 },
   { id: 'campanello', slot: 'collo', label: 'Campanellino', fish: 22 },
   { id: 'perle', slot: 'collo', label: 'Collana di perle', fish: 40 },
   { id: 'medaglia', slot: 'collo', label: "Medaglia d'oro", fish: 90 },
+  { id: 'bandana', slot: 'collo', label: 'Bandana', fish: 5 },
+  { id: 'cravatta', slot: 'collo', label: 'Cravatta', fish: 6 },
+  { id: 'sciarpaNatale', slot: 'collo', label: 'Sciarpa natalizia', fish: 9, xmas: true },
+  { id: 'lucine', slot: 'collo', label: 'Lucine di Natale', fish: 12, xmas: true },
+  { id: 'collanafiori', slot: 'collo', label: 'Collana hawaiana', fish: 14 },
+  { id: 'stetoscopio', slot: 'collo', label: 'Stetoscopio', fish: 16 },
   // In pinna
   { id: 'pesce', slot: 'pinna', label: 'Pesciolino', fish: 2 },
   { id: 'libro', slot: 'pinna', label: 'Libro di Analisi', fish: 7 },
@@ -142,7 +172,25 @@ export const COSMETICS = [
   { id: 'tazza', slot: 'pinna', label: 'Tazza di cioccolata', fish: 18 },
   { id: 'palloncino', slot: 'pinna', label: 'Palloncino a cuore', fish: 32 },
   { id: 'rosa', slot: 'pinna', label: 'Rosa', fish: 65 },
-] as const satisfies readonly { id: string; slot: CosmeticSlot; label: string; fish: number }[];
+  { id: 'righello', slot: 'pinna', label: 'Righello', fish: 3 },
+  { id: 'pizza', slot: 'pinna', label: 'Fetta di pizza', fish: 4 },
+  { id: 'pallina', slot: 'pinna', label: 'Pallina di Natale', fish: 4, xmas: true },
+  { id: 'caffe', slot: 'pinna', label: 'Caffè da asporto', fish: 5 },
+  { id: 'bastoncino', slot: 'pinna', label: 'Bastoncino di zucchero', fish: 5, xmas: true },
+  { id: 'gelato', slot: 'pinna', label: 'Gelato', fish: 6 },
+  { id: 'regalo', slot: 'pinna', label: 'Pacchetto regalo', fish: 7, xmas: true },
+  { id: 'calcolatrice', slot: 'pinna', label: 'Calcolatrice', fish: 8 },
+  { id: 'calza', slot: 'pinna', label: 'Calza della Befana', fish: 8, xmas: true },
+  { id: 'orologio', slot: 'pinna', label: 'Orologio', fish: 9 },
+  { id: 'microfono', slot: 'pinna', label: 'Microfono', fish: 10 },
+  { id: 'ombrello', slot: 'pinna', label: 'Ombrello', fish: 11 },
+  { id: 'valigetta', slot: 'pinna', label: 'Valigetta 24 ore', fish: 12 },
+  { id: 'racchetta', slot: 'pinna', label: 'Racchetta da tennis', fish: 12 },
+  { id: 'bacchetta', slot: 'pinna', label: 'Bacchetta magica', fish: 13 },
+  { id: 'lanterna', slot: 'pinna', label: 'Lanterna', fish: 14 },
+  { id: 'pupazzo', slot: 'pinna', label: 'Pupazzo di neve', fish: 16, xmas: true },
+  { id: 'chitarra', slot: 'pinna', label: 'Chitarra', fish: 20 },
+] as const satisfies readonly { id: string; slot: CosmeticKind; label: string; fish: number; xmas?: boolean }[];
 
 export type CosmeticId = (typeof COSMETICS)[number]['id'];
 export type Cosmetics = Partial<Record<CosmeticSlot, CosmeticId>>;
@@ -182,6 +230,23 @@ export interface IglooSettings extends CloudFields {
   petBirthday: string;
   /** YYYY-MM-DD (le prime versioni salvavano solo MM-DD) */
   anniversary: string;
+  /** Comandi LaTeX personali, condivisi nell'igloo: \\nome → corpo (con #1, #2… per gli argomenti) */
+  customCommands?: CustomCommand[];
+  /** Scorciatoie personali dell'editor: trigger → testo inserito */
+  customSnippets?: CustomSnippet[];
+}
+
+export interface CustomCommand {
+  /** Senza backslash */
+  name: string;
+  body: string;
+}
+
+export interface CustomSnippet {
+  trigger: string;
+  body: string;
+  /** true = funziona anche fuori dalle formule */
+  anywhere?: boolean;
 }
 
 export const uid = () =>

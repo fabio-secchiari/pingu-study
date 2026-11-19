@@ -3,7 +3,8 @@ import { db } from '../db';
 import Penguin from '../components/Penguin';
 import { cosmeticsOf } from '../types';
 import { useIgloo, useMyUserId, useProfiles } from '../lib/cloud';
-import { fishOf, minutesBySubject } from '../lib/stats';
+import { fishOf, subjectRows } from '../lib/stats';
+import { fmtMinutes } from '../components/StudyCalendar';
 import { fmtClock, usePomodoro } from '../lib/pomodoro';
 import StudyCalendar from '../components/StudyCalendar';
 
@@ -24,12 +25,14 @@ export default function PomodoroPage() {
   const pct = 1 - remaining / total;
   const myFish = fishOf(sessions, me, igloo);
   const partnerStudying = !!partner?.studyingUntil && partner.studyingUntil > Date.now();
+  const partnerSubject = partner?.studyingSubject ? subjects.find((x) => x.id === partner.studyingSubject)?.name : undefined;
   const together = partnerStudying && running && mode === 'work';
   const weekAgo = Date.now() - 7 * 86400000;
-  const weekly = minutesBySubject(sessions.filter((x) => x.userId === me), weekAgo);
-  const weeklyRows = Object.entries(weekly)
-    .map(([sid, min]) => ({ name: subjects.find((x) => x.id === sid)?.name ?? 'Senza materia', min }))
-    .sort((a, b) => b.min - a.min);
+  const weeklyRows = subjectRows(
+    sessions.filter((x) => x.userId === me),
+    subjects,
+    weekAgo
+  );
   const weeklyMax = Math.max(1, ...weeklyRows.map((r) => r.min));
 
   return (
@@ -54,15 +57,18 @@ export default function PomodoroPage() {
         {partnerStudying && partner && (
           <p className="text-sm font-medium text-penguin-pink-dark">
             {together ? `💞 Tu e ${partner.name} state studiando insieme!` : `${partner.name} sta studiando ora: unisciti!`}
+            {partnerSubject && <span className="block text-xs font-normal text-ink/60">📚 {partner.name} è su {partnerSubject}</span>}
           </p>
         )}
         <select
           value={subjectId}
           onChange={(e) => setSubjectId(e.target.value)}
           aria-label="Materia del pomodoro"
-          className="px-4 py-2 rounded-2xl bg-white/80 border border-penguin-blue-soft text-sm"
+          className={`px-4 py-2 rounded-2xl bg-white/80 border text-sm ${
+            !subjectId && subjects.length > 0 ? 'border-penguin-pink-dark text-ink/60' : 'border-penguin-blue-soft'
+          }`}
         >
-          <option value="">Senza materia</option>
+          <option value="">{subjects.length > 0 ? 'Che materia studi? 📚' : 'Senza materia'}</option>
           {subjects.map((x) => (
             <option key={x.id} value={x.id}>
               {x.name}
@@ -179,16 +185,22 @@ export default function PomodoroPage() {
         <section className="p-4 rounded-3xl bg-white/70 border border-penguin-blue-soft space-y-2">
           <h3 className="text-sm font-semibold">Ultimi 7 giorni</h3>
           {weeklyRows.map((r) => (
-            <div key={r.name} className="flex items-center gap-3 text-sm">
-              <span className="w-32 truncate">{r.name}</span>
+            <div key={r.id || 'none'} className={`flex items-center gap-3 text-sm ${r.none ? 'text-ink/45' : ''}`}>
+              <span className={`w-32 truncate ${r.none ? 'italic' : ''}`}>{r.name}</span>
               <div className="flex-1 h-2 rounded-full bg-ink/5 overflow-hidden">
-                <div className="h-full bg-penguin-blue" style={{ width: `${(r.min / weeklyMax) * 100}%` }} />
+                <div
+                  className={`h-full ${r.none ? 'bg-ink/15' : 'bg-penguin-blue'}`}
+                  style={{ width: `${(r.min / weeklyMax) * 100}%` }}
+                />
               </div>
-              <span className="w-16 text-right tabular-nums text-ink/60">
-                {r.min >= 60 ? `${Math.floor(r.min / 60)}h ${r.min % 60}m` : `${r.min}m`}
-              </span>
+              <span className="w-16 text-right tabular-nums text-ink/60">{fmtMinutes(r.min)}</span>
             </div>
           ))}
+          {weeklyRows.some((r) => r.none) && (
+            <p className="text-[11px] text-ink/40">
+              Le sessioni senza materia si possono assegnare a una materia dal calendario qui sotto.
+            </p>
+          )}
         </section>
       )}
 

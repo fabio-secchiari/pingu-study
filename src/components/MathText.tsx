@@ -1,15 +1,11 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
+import { katexOptions, useMacrosVersion } from '../lib/katexMacros';
 
 function renderLatex(src: string, display: boolean): string {
   try {
-    return katex.renderToString(src, {
-      throwOnError: false,   // non esplode su input sporco
-      displayMode: display,
-      strict: false,
-      trust: false,
-    });
+    return katex.renderToString(src, katexOptions(display));
   } catch {
     return `<code>${src.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]!))}</code>`;
   }
@@ -42,7 +38,8 @@ interface Props {
 }
 
 export default function MathText({ children, className, as = 'span' }: Props) {
-  const html = useMemo(() => buildHtml(children ?? ''), [children]);
+  const v = useMacrosVersion();
+  const html = useMemo(() => buildHtml(children ?? ''), [children, v]);
   const Tag = as as any;
   return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }

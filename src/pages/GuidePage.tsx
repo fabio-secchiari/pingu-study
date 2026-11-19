@@ -2,7 +2,14 @@ import { Link } from 'react-router-dom';
 import Penguin from '../components/Penguin';
 import Markdown from '../components/Markdown';
 import CheatSheet, { Kbd } from '../components/CheatSheet';
-import { COSMETICS, SLOT_LABELS, type CosmeticSlot } from '../types';
+import { COSMETICS, type CosmeticKind } from '../types';
+
+const KIND_LABELS: Record<CosmeticKind, string> = {
+  testa: 'Testa',
+  viso: 'Viso',
+  collo: 'Collo',
+  pinna: 'In pinna (uno per pinna)',
+};
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent);
 const MOD = isMac ? '⌘' : 'Ctrl';
@@ -268,14 +275,19 @@ export default function GuidePage() {
         <div>
           <p className="font-semibold mb-2">Cosmetici da sbloccare con i pesciolini</p>
           <div className="grid sm:grid-cols-2 gap-3">
-            {(Object.keys(SLOT_LABELS) as CosmeticSlot[]).map((slot) => (
+            {(Object.keys(KIND_LABELS) as CosmeticKind[]).map((slot) => (
               <div key={slot} className="rounded-2xl bg-white border border-penguin-blue-soft p-3">
-                <p className="font-medium text-sm mb-2">{SLOT_LABELS[slot]}</p>
+                <p className="font-medium text-sm mb-2">{KIND_LABELS[slot]}</p>
                 <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-                  {COSMETICS.filter((c) => c.slot === slot).map((c) => (
+                  {COSMETICS.filter((c) => c.slot === slot)
+                    .sort((a, b) => a.fish - b.fish)
+                    .map((c) => (
                     <li key={c.id} className="flex items-center gap-1.5">
                       <Penguin color="pink" cosmetics={{ [slot]: c.id }} className="w-6 h-7 shrink-0" />
-                      <span className="flex-1 truncate">{c.label}</span>
+                      <span className="flex-1 truncate">
+                        {c.label}
+                        {'xmas' in c && c.xmas ? ' 🎄' : ''}
+                      </span>
                       <span className="text-ink/50 tabular-nums text-xs">{c.fish}🐟</span>
                     </li>
                   ))}

@@ -10,6 +10,20 @@ import IglooPage from './pages/IglooPage';
 import GuidePage from './pages/GuidePage';
 import { PomodoroProvider } from './lib/pomodoro';
 import { SectionsProvider, useMaterieLocation } from './lib/sections';
+import { useEffect } from 'react';
+import { useIgloo } from './lib/cloud';
+import { setUserMacros } from './lib/katexMacros';
+import { setUserSnippets } from './components/editor/latexSuite';
+
+/** Tiene allineati i comandi e le scorciatoie personali (salvati nell'igloo) con KaTeX e l'editor. */
+function CustomLatexSync() {
+  const igloo = useIgloo();
+  const cmds = JSON.stringify(igloo.customCommands ?? []);
+  const snips = JSON.stringify(igloo.customSnippets ?? []);
+  useEffect(() => setUserMacros(JSON.parse(cmds)), [cmds]);
+  useEffect(() => setUserSnippets(JSON.parse(snips)), [snips]);
+  return null;
+}
 
 function AppRoutes() {
   const { materieLocation, materieActive } = useMaterieLocation();
@@ -44,6 +58,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <PomodoroProvider>
+        <CustomLatexSync />
         <AppRoutes />
       </PomodoroProvider>
     </BrowserRouter>

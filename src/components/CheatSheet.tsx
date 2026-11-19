@@ -1,5 +1,7 @@
 import katex from 'katex';
 import { AUTO_COMMANDS, SNIPPETS } from './editor/latexSuite';
+import { argCount, katexOptions } from '../lib/katexMacros';
+import { useIgloo } from '../lib/cloud';
 
 /** Corpo dello snippet "pulito" per l'anteprima: i campi diventano un esempio leggibile. */
 function preview(body: string) {
@@ -8,13 +10,14 @@ function preview(body: string) {
     .replace(/\$\{\d+\}$/, '') // l'ultimo campo vuoto in fondo è solo la posizione del cursore
     .replace(/\\text\{\$\{\d+\}\}/g, '\\text{testo}')
     .replace(/\$\{(\d+)(?::([^}]*))?\}/g, (_m, n, def) => def ?? letters[n] ?? 'x')
-    .replace(/\n/g, ' ');
+    .replace(/\n/g, ' ')
+    .replace(/\\\\([{}])/g, '\\$1'); // "\\{" negli snippet è un \{ vero
 }
 
 function Tex({ src }: { src: string }) {
   let html = '';
   try {
-    html = katex.renderToString(src, { throwOnError: false, strict: false });
+    html = katex.renderToString(src, katexOptions(false));
   } catch {
     html = src;
   }
@@ -24,9 +27,20 @@ function Tex({ src }: { src: string }) {
 const GROUPS: { title: string; emoji: string; triggers: string[] }[] = [
   { title: 'Frazioni, radici e potenze', emoji: '🧮', triggers: ['//', 'sq', 'sr', 'cb', 'rd', 'ee'] },
   { title: 'Limiti, somme e integrali', emoji: '♾️', triggers: ['lim', 'sum', 'prod', 'dint', 'inf'] },
-  { title: 'Relazioni e frecce', emoji: '➡️', triggers: ['->', '=>', '<=>', '!=', '/=', '<=', '>=', '~~', 'xx', '**', '...'] },
+  { title: 'Relazioni e frecce', emoji: '➡️', triggers: ['->', '-->', '<->', '<--', '|->', '=>', '==>', '<=>', '<==', '!=', '/=', '<=', '>=', '~~', 'xx', '**', '...'] },
   { title: 'Insiemi e logica', emoji: '🧊', triggers: ['RR', 'NN', 'ZZ', 'QQ', 'CC', 'AA', 'EE', 'inn', 'notin', 'sub', 'cup', 'cap', 'set'] },
   { title: 'Valori assoluti, norme e stili', emoji: '🎀', triggers: ['abs', 'norm', 'bf', 'cal', 'text', 'ol', 'hat'] },
+];
+
+/** [sorgente, descrizione opzionale (altrimenti si mostra il risultato)] */
+const EXTRA_COMMANDS: [string, string?][] = [
+  ['\\abs{x}'], ['\\norm{v}'], ['\\floor{x}'], ['\\ceil{x}'],
+  ['\\Q'], ['\\C'], ['\\one'], ['\\eps'],
+  ['\\dv{f}{x}'], ['\\pdv{f}{x}'], ['\\dd x'], ['\\grad f'],
+  ['\\sgn x'], ['\\rank A'], ['\\Ker f'], ['\\im f'],
+  ['\\mcd(a,b)'], ['\\mcm(a,b)'], ['\\sen x'], ['\\arctg x'],
+  ['a \\divides b'], ['\\defeq'], ['\\qed'], ['\\lightning'],
+  ['\\celsius'], ['\\Leftlongarrow', 'come \\Longleftarrow'],
 ];
 
 const kbd = 'inline-block min-w-7 px-1.5 py-0.5 rounded-md bg-white border border-ink/15 shadow-[0_1px_0_rgba(0,0,0,0.08)] font-mono text-[13px] text-center';
@@ -40,6 +54,9 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
   const byTrigger = new Map(SNIPPETS.map((s) => [s.trigger, s]));
   const greek = SNIPPETS.filter((s) => s.trigger.startsWith('@'));
   const words = (list: string[]) => list.filter((w) => byTrigger.get(w)?.auto);
+  const igloo = useIgloo();
+  const myCmds = igloo.customCommands ?? [];
+  const mySnips = igloo.customSnippets ?? [];
 
   return (
     <div className={compact ? 'space-y-3 text-sm' : 'space-y-5'}>
@@ -54,6 +71,33 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
           saltare al campo successivo (es. dal numeratore al denominatore).
         </p>
       </div>
+
+      {(myCmds.length > 0 || mySnips.length > 0) && (
+        <section className="rounded-2xl bg-white border border-penguin-pink/50 p-3 space-y-1.5">
+          <h4 className="font-semibold">⭐ I vostri comandi</h4>
+          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+            {mySnips.map((x) => (
+              <li key={'s' + x.trigger} className="flex items-center gap-2">
+                <Kbd>{x.trigger}</Kbd>
+                <span className="min-w-0 overflow-hidden">
+                  <Tex src={preview(x.body.replace(/\\([{}])/g, '\\\\$1'))} />
+                </span>
+              </li>
+            ))}
+            {myCmds.map((c) => {
+              const use = '\\' + c.name + Array.from({ length: argCount(c.body) }, (_, i) => `{${'xyz'[i] ?? 'x'}}`).join('');
+              return (
+                <li key={'c' + c.name} className="flex items-center gap-2">
+                  <code className="text-penguin-pink-dark">{use}</code>
+                  <span className="text-ink/40">→</span>
+                  <Tex src={use} />
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-[12px] text-ink/50">Si cambiano in Impostazioni → Comandi LaTeX personali.</p>
+        </section>
+      )}
 
       <div className={`grid gap-3 ${compact ? '' : 'sm:grid-cols-2'}`}>
         {GROUPS.map((g) => (
@@ -123,6 +167,24 @@ export default function CheatSheet({ compact = false }: { compact?: boolean }) {
           </div>
         )}
       </section>
+
+      {!compact && (
+        <section className="rounded-2xl bg-white border border-penguin-blue-soft p-3 space-y-2">
+          <h4 className="font-semibold">🧰 Comandi in più</h4>
+          <p className="text-[13px] text-ink/70">
+            Oltre ai comandi LaTeX standard puoi usare anche questi (si scrivono con il backslash):
+          </p>
+          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-[13px]">
+            {EXTRA_COMMANDS.map(([src, label]) => (
+              <li key={src} className="flex items-center gap-2">
+                <code className="text-penguin-pink-dark shrink-0">{src}</code>
+                <span className="text-ink/40">→</span>
+                {label ? <span>{label}</span> : <Tex src={src} />}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rounded-2xl bg-white border border-penguin-blue-soft p-3 space-y-1">
         <h4 className="font-semibold mb-1">🪄 Automatici</h4>

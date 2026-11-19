@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLiveQuery, useObservable } from 'dexie-react-hooks';
 import { db } from '../db';
-import { COSMETICS, SLOT_LABELS, cosmeticsOf, uid, type CosmeticSlot, type Profile } from '../types';
+import { COSMETICS, SLOT_LABELS, cosmeticsOf, kindOfSlot, uid, type CosmeticSlot, type Profile } from '../types';
 import Penguin from '../components/Penguin';
+import IglooStats from '../components/IglooStats';
 import {
   createIgloo,
   inviteToIgloo,
@@ -18,12 +19,12 @@ import { fishOf, petMood, streak } from '../lib/stats';
 import { monthsTogether, petAgeDays, specialDays } from '../lib/special';
 import { daysUntil } from '../lib/text';
 
-function StudyingBadge({ p }: { p?: Profile }) {
+function StudyingBadge({ p, subjectName }: { p?: Profile; subjectName?: string }) {
   if (!p?.studyingUntil || p.studyingUntil < Date.now()) return null;
   const mins = Math.ceil((p.studyingUntil - Date.now()) / 60000);
   return (
-    <span className="text-[11px] px-2 py-0.5 rounded-full bg-penguin-blue text-white">
-      📚 sta studiando · {mins} min
+    <span className="text-[11px] px-2 py-0.5 rounded-full bg-penguin-blue text-white text-center leading-tight max-w-full">
+      📚 {subjectName ? <b>{subjectName}</b> : 'sta studiando'} · ancora {mins} min
     </span>
   );
 }
@@ -46,6 +47,9 @@ export default function IglooPage() {
   const { me, mine, partner } = useProfiles();
   const igloo = useIgloo();
   const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? [];
+  const subjects = useLiveQuery(() => db.subjects.toArray(), []) ?? [];
+  const items = useLiveQuery(() => db.items.toArray(), []) ?? [];
+  const subjectName = (id?: string) => (id ? subjects.find((x) => x.id === id)?.name : undefined);
   const notes = useLiveQuery(() => db.notes.orderBy('createdAt').reverse().limit(20).toArray(), []) ?? [];
   const members = useLiveQuery(() => (shared ? db.members.where('realmId').equals(shared).toArray() : []), [shared]) ?? [];
 
@@ -139,7 +143,7 @@ export default function IglooPage() {
       <section className="relative overflow-hidden rounded-3xl border border-penguin-blue-soft bg-gradient-to-b from-[#dceefc] to-[#f4f9fe] px-4 pt-6 pb-4">
         <div className="flex items-end justify-center gap-2 sm:gap-6 relative z-10">
           <div className="flex flex-col items-center gap-1 w-28 sm:w-36">
-            <StudyingBadge p={mine} />
+            <StudyingBadge p={mine} subjectName={subjectName(mine?.studyingSubject)} />
             <Penguin
               color={mine?.color ?? 'blue'}
               cosmetics={cosmeticsOf(mine)}
@@ -160,7 +164,7 @@ export default function IglooPage() {
           <div className="flex flex-col items-center gap-1 w-28 sm:w-36">
             {partner ? (
               <>
-                <StudyingBadge p={partner} />
+                <StudyingBadge p={partner} subjectName={subjectName(partner.studyingSubject)} />
                 <Penguin
                   color={partner.color}
                   cosmetics={cosmeticsOf(partner)}
@@ -199,6 +203,8 @@ export default function IglooPage() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <IglooStats sessions={sessions} subjects={subjects} items={items} me={me} mine={mine} partner={partner} />
+
         {/* Bigliettini */}
         <section className="p-5 rounded-3xl bg-white/85 border border-penguin-blue-soft space-y-3">
           <h3 className="font-semibold">💌 Bigliettini</h3>
@@ -262,11 +268,11 @@ export default function IglooPage() {
               <div className="flex items-center gap-3">
                 <Penguin color={mine.color} cosmetics={cosmeticsOf(mine)} className="w-16 h-20 shrink-0" />
                 <p className="text-xs text-ink/50">
-                  Combina un cosmetico per ogni zona. Si sbloccano con i pesciolini (1 pomodoro = 1 🐟): ne hai{' '}
-                  <b>{myFish}</b>.
+                  Combina un cosmetico per ogni zona, e un oggetto diverso in ogni pinna. Si sbloccano con i pesciolini
+                  (1 pomodoro = 1 🐟): ne hai <b>{myFish}</b>.
                 </p>
               </div>
-              <div className="flex gap-1 rounded-full bg-penguin-blue-soft/60 p-0.5 text-xs w-fit">
+              <div className="flex flex-wrap gap-1 rounded-3xl bg-penguin-blue-soft/60 p-0.5 text-xs w-fit">
                 {(Object.keys(SLOT_LABELS) as CosmeticSlot[]).map((k) => (
                   <button
                     key={k}
@@ -278,7 +284,10 @@ export default function IglooPage() {
                 ))}
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {[{ id: undefined, label: 'Niente', fish: 0 }, ...COSMETICS.filter((c) => c.slot === slot)].map((c) => {
+                {[
+                  { id: undefined, label: 'Niente', fish: 0 },
+                  ...COSMETICS.filter((c) => c.slot === kindOfSlot(slot)).sort((a, b) => a.fish - b.fish),
+                ].map((c) => {
                   const current = cosmeticsOf(mine);
                   const locked = myFish < c.fish;
                   const selected = current[slot] === c.id;
@@ -292,7 +301,10 @@ export default function IglooPage() {
                       } ${locked ? 'opacity-40' : 'hover:bg-penguin-blue-soft/50'}`}
                     >
                       <Penguin color={mine.color} cosmetics={{ [slot]: c.id }} className="w-10 h-12 mx-auto" />
-                      <span className="block text-[11px] leading-tight mt-1">{c.label}</span>
+                      <span className="block text-[11px] leading-tight mt-1">
+                        {c.label}
+                        {'xmas' in c && c.xmas && <span title="Natalizio"> 🎄</span>}
+                      </span>
                       {locked && <span className="block text-[10px] text-ink/60">🔒 {c.fish} 🐟</span>}
                     </button>
                   );

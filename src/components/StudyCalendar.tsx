@@ -22,6 +22,31 @@ const KIND_LABEL: Record<StudySession['kind'], string> = {
   manuale: '✍️ aggiunto a mano',
 };
 
+/** Nome della materia; se manca (o è stata cancellata) si può sceglierla al volo. */
+function SessionSubject({ s, subjects, editable }: { s: StudySession; subjects: Subject[]; editable: boolean }) {
+  const subj = subjects.find((x) => x.id === s.subjectId);
+  if (subj) return <>{subj.name}</>;
+  if (!editable || subjects.length === 0) return <span className="italic text-ink/45">Senza materia</span>;
+  return (
+    <select
+      value=""
+      onChange={(e) => {
+        const target = subjects.find((x) => x.id === e.target.value);
+        if (target) db.sessions.update(s.id, { subjectId: target.id });
+      }}
+      aria-label="Assegna una materia a questa sessione"
+      className="max-w-40 px-2 py-0.5 rounded-lg border border-dashed border-penguin-pink-dark/60 bg-penguin-pink-soft/40 text-xs text-ink/60"
+    >
+      <option value="">Scegli la materia…</option>
+      {subjects.map((x) => (
+        <option key={x.id} value={x.id}>
+          {x.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function fmtMinutes(min: number): string {
   if (min <= 0) return '0m';
   const h = Math.floor(min / 60);
@@ -41,6 +66,7 @@ export default function StudyCalendar({ sessions, subjects, me, mine, partner }:
   const [hours, setHours] = useState(1);
   const [mins, setMins] = useState(0);
   const [subjectId, setSubjectId] = useState('');
+  const defaultSubject = subjectId || subjects[0]?.id || '';
 
   const filtered = useMemo(
     () =>
@@ -82,12 +108,12 @@ export default function StudyCalendar({ sessions, subjects, me, mine, partner }:
     const minutes = Math.max(0, hours) * 60 + Math.max(0, mins);
     if (minutes <= 0) return;
     const [y, m, d] = selected.split('-').map(Number);
-    const subj = subjects.find((x) => x.id === subjectId);
+    const subj = subjects.find((x) => x.id === defaultSubject);
     await db.sessions.add({
       id: uid(),
       userId: me,
       kind: 'manuale',
-      subjectId: subjectId || undefined,
+      subjectId: subj?.id,
       minutes,
       endedAt: new Date(y, m - 1, d, 12).getTime(),
       ...realmPatch(subj?.realmId),
@@ -216,8 +242,8 @@ export default function StudyCalendar({ sessions, subjects, me, mine, partner }:
             </label>
             <label className="text-xs flex-1 min-w-36">
               Materia
-              <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className="block w-full px-2 py-1.5 rounded-lg border border-penguin-blue-soft bg-white">
-                <option value="">Senza materia</option>
+              <select value={defaultSubject} onChange={(e) => setSubjectId(e.target.value)} className="block w-full px-2 py-1.5 rounded-lg border border-penguin-blue-soft bg-white">
+                {subjects.length === 0 && <option value="">Senza materia</option>}
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -238,8 +264,8 @@ export default function StudyCalendar({ sessions, subjects, me, mine, partner }:
                 <span className="text-ink/50 tabular-nums w-12">
                   {s.kind === 'manuale' ? '—' : new Date(s.endedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                 </span>
-                <span className="flex-1 truncate">
-                  {subjects.find((x) => x.id === s.subjectId)?.name ?? 'Senza materia'}
+                <span className="flex-1 min-w-0 truncate">
+                  <SessionSubject s={s} subjects={subjects} editable={s.userId === me} />
                   <span className="text-xs text-ink/40"> · {KIND_LABEL[s.kind]}</span>
                   {who === 'insieme' && (
                     <span className="text-xs text-ink/40"> · {s.userId === me ? mine?.name ?? 'io' : partner?.name}</span>
