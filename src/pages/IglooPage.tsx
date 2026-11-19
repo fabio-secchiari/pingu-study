@@ -29,6 +29,32 @@ function StudyingBadge({ p, subjectName }: { p?: Profile; subjectName?: string }
   );
 }
 
+/** Il prossimo accessorio da sbloccare, con la barra di avanzamento. */
+function NextUnlock({ fish, color }: { fish: number; color: 'blue' | 'pink' }) {
+  const next = [...COSMETICS].sort((a, b) => a.fish - b.fish).find((c) => c.fish > fish);
+  const unlocked = COSMETICS.filter((c) => c.fish <= fish).length;
+  if (!next) return <p className="text-xs text-ink/60">🏆 Hai sbloccato tutti i {COSMETICS.length} accessori!</p>;
+  const prev = Math.max(0, ...COSMETICS.filter((c) => c.fish <= fish).map((c) => c.fish));
+  const pct = ((fish - prev) / (next.fish - prev)) * 100;
+  const left = next.fish - fish;
+  return (
+    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-penguin-pink-soft/50 border border-penguin-pink/30">
+      <Penguin color={color} cosmetics={{ [next.slot]: next.id }} className="w-9 h-11 shrink-0 opacity-80" />
+      <div className="flex-1 min-w-0 space-y-1">
+        <p className="text-xs">
+          🎯 Prossimo: <b>{next.label}</b> tra {left} {left === 1 ? 'pomodoro' : 'pomodori'}
+        </p>
+        <div className="h-1.5 rounded-full bg-white overflow-hidden">
+          <div className="h-full bg-penguin-pink-dark" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-[10px] text-ink/50">
+          {unlocked} di {COSMETICS.length} accessori sbloccati
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function nextBirthdayDays(birthday: string) {
   const [, m, d] = birthday.split('-').map(Number);
   const now = new Date();
@@ -272,6 +298,7 @@ export default function IglooPage() {
                   (1 pomodoro = 1 🐟): ne hai <b>{myFish}</b>.
                 </p>
               </div>
+              <NextUnlock fish={myFish} color={mine.color} />
               <div className="flex flex-wrap gap-1 rounded-3xl bg-penguin-blue-soft/60 p-0.5 text-xs w-fit">
                 {(Object.keys(SLOT_LABELS) as CosmeticSlot[]).map((k) => (
                   <button
