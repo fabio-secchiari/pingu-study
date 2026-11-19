@@ -268,6 +268,11 @@ export default function GuidePage() {
             una giornata intensa.
           </li>
           <li>
+            <b>Eventi a tempo 🎄:</b> in certi periodi dell'anno (Natale, Capodanno e Befana: dal 15 novembre al 6
+            gennaio) ogni pomodoro vale anche una moneta dell'evento, come i biscotti 🍪. Con le monete compri gli
+            accessori in edizione limitata, che restano tuoi per sempre; le monete avanzate a fine evento scadono.
+          </li>
+          <li>
             <b>Date speciali:</b> anniversario, mesiversario ogni 22, compleanno del pinguino, San Valentino e Natale
             hanno una sorpresa.
           </li>
@@ -286,7 +291,6 @@ export default function GuidePage() {
                       <Penguin color="pink" cosmetics={{ [slot]: c.id }} className="w-6 h-7 shrink-0" />
                       <span className="flex-1 truncate">
                         {c.label}
-                        {'xmas' in c && c.xmas ? ' 🎄' : ''}
                       </span>
                       <span className="text-ink/50 tabular-nums text-xs">{c.fish}🐟</span>
                     </li>

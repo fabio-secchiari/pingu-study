@@ -209,6 +209,24 @@ function Head({ id }: { id?: string }) {
           <circle cx="114" cy="27" r="5" fill="#F5C542" stroke="#D9A21B" strokeWidth="1" />
         </g>
       );
+    case 'festa':
+      return (
+        <g transform="rotate(12 62 20)">
+          <path d="M44 36 L62 -14 L80 36 z" fill="#7F77DD" />
+          <path d="M52 14 l16 4 M48 26 l26 5" stroke="#F5C542" strokeWidth="3" />
+          <circle cx="62" cy="-14" r="5.5" fill="#EC4F8A" />
+        </g>
+      );
+    case 'befana':
+      return (
+        <g>
+          <path d="M18 50 q4 -50 42 -50 q38 0 42 50 q-8 -8 -18 -10 l-24 -4 l-24 4 q-10 2 -18 10 z" fill="#7A5C99" />
+          <rect x="36" y="12" width="10" height="9" rx="1.5" fill="#E9B872" transform="rotate(-12 41 16)" />
+          <rect x="70" y="20" width="9" height="8" rx="1.5" fill="#6BAF6B" transform="rotate(10 74 24)" />
+          <path d="M38 13 l7 7 M71 21 l6 6" stroke="#5A3B2A" strokeWidth="0.8" strokeDasharray="1.5 1.5" />
+          <path d="M98 48 l12 8 l-4 -12 z M98 48 l6 14 l4 -10 z" fill="#5E4680" />
+        </g>
+      );
     default:
       return null;
   }
@@ -294,6 +312,32 @@ function Face({ id }: { id?: string }) {
           <path d="M38 53 q6 -3 12 0" stroke="#fff" strokeWidth="2.5" fill="none" opacity="0.7" />
         </g>
       );
+    case 'anno': {
+      const now = new Date();
+      const year = now.getMonth() >= 10 ? now.getFullYear() + 1 : now.getFullYear();
+      return (
+        <g>
+          <g fill="none" stroke="#D9A21B" strokeWidth="3">
+            <circle cx="46" cy="58" r="10" />
+            <circle cx="74" cy="58" r="10" />
+            <path d="M56 58 h8" />
+          </g>
+          <text
+            x="60"
+            y="45"
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="800"
+            fill="#F5C542"
+            stroke="#B8860B"
+            strokeWidth="0.6"
+            fontFamily="ui-sans-serif, system-ui"
+          >
+            {year}
+          </text>
+        </g>
+      );
+    }
     default:
       return null;
   }
@@ -652,6 +696,52 @@ function Flipper({ id, mirrored = false }: { id?: string; mirrored?: boolean }) 
           <rect x="-2" y="0" width="4" height="14" rx="1.5" fill="#5A3B2A" />
           <ellipse cx="0" cy="-12" rx="9" ry="12" fill="#fff" fillOpacity="0.5" stroke="#3BA36B" strokeWidth="3" />
           <path d="M-4 -22 v20 M0 -24 v24 M4 -22 v20 M-8 -16 h16 M-9 -11 h18 M-8 -6 h16" stroke="#9aa8b8" strokeWidth="0.6" />
+        </g>
+      );
+    case 'trombetta':
+      return (
+        <g transform="translate(100 96) rotate(-25)">
+          <rect x="-4" y="-2.5" width="6" height="5" rx="1.5" fill="#F5C542" />
+          <path d="M2 -2 L20 -6 L20 6 L2 2 z" fill="#EC4F8A" />
+          <path d="M8 -3.3 v6.6 M14 -4.6 v9.2" stroke="#fff" strokeWidth="1.5" />
+          <path d="M20 0 q5 -10 9 -2 q3 8 8 -1" fill="none" stroke="#7F77DD" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      );
+    case 'spumante':
+      return (
+        <g transform="translate(108 76)">
+          <path d="M-6 0 h12 l-1.5 15 q-4.5 5 -9 0 z" fill="#FFF8DC" stroke="#c9b57a" strokeWidth="1" />
+          <path d="M-5.2 5 h10.4 l-0.9 10 q-4.3 4.5 -8.6 0 z" fill="#F5D76E" />
+          <circle cx="-1" cy="10" r="0.9" fill="#fff" />
+          <circle cx="1.5" cy="7.5" r="0.7" fill="#fff" />
+          <path d="M0 19 v13" stroke="#c9b57a" strokeWidth="1.5" />
+          <ellipse cx="0" cy="32.5" rx="6" ry="1.6" fill="#c9b57a" />
+        </g>
+      );
+    case 'carbone':
+      return (
+        <g transform="translate(97 92)">
+          <circle cx="6" cy="4" r="5" fill="#2b2f36" />
+          <circle cx="13" cy="2" r="5.5" fill="#363b44" />
+          <circle cx="18" cy="5" r="4.5" fill="#2b2f36" />
+          <path d="M0 5 h24 l-2 17 h-20 z" fill="#fff" stroke="#c9d6e3" strokeWidth="1.2" />
+          <path d="M4 12 q8 4 16 0" stroke="#E04848" strokeWidth="1.5" fill="none" />
+          {[
+            [5, 2],
+            [12, -1],
+            [17, 3],
+          ].map(([x, y]) => (
+            <circle key={x} cx={x} cy={y} r="0.8" fill="#fff" />
+          ))}
+        </g>
+      );
+    case 'scopa':
+      return (
+        <g transform="translate(102 118) rotate(20)">
+          <rect x="-1.6" y="-74" width="3.2" height="74" rx="1.5" fill="#8B5A3C" />
+          <path d="M-6 0 h12 l7 18 h-26 z" fill="#E9B872" />
+          <path d="M-3 2 l-4 15 M0 2 v16 M3 2 l4 15" stroke="#C99A55" strokeWidth="1" />
+          <rect x="-6.5" y="-2" width="13" height="4" rx="1" fill="#C93A3A" />
         </g>
       );
     default:

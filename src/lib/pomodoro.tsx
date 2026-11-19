@@ -4,6 +4,7 @@ import { db } from '../db';
 import { uid } from '../types';
 import { realmPatch, useMyUserId, useProfiles } from './cloud';
 import { notify, requestNotifications } from './notify';
+import { activeEvents } from './events';
 
 /**
  * Timer del pomodoro globale: vive sopra le pagine, così continua a girare mentre si
@@ -153,7 +154,9 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
       const cur = stRef.current;
       beep();
       if (cur.mode === 'work') {
-        notify('Pomodoro completato!', 'Hai guadagnato un pesciolino 🐟 Tempo di pausa 🐧', 'pomodoro');
+        const ev = activeEvents()[0];
+        const bonus = ev ? ` e un ${ev.def.currency.one} ${ev.def.currency.emoji}` : '';
+        notify('Pomodoro completato!', `Hai guadagnato un pesciolino 🐟${bonus}. Tempo di pausa 🐧`, 'pomodoro');
         const subj = subjects.find((x) => x.id === cur.subjectId);
         await db.sessions.add({
           id: uid(),

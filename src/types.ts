@@ -131,13 +131,9 @@ export const COSMETICS = [
   { id: 'mago', slot: 'testa', label: 'Cappello da mago', fish: 60 },
   { id: 'corona', slot: 'testa', label: 'Coroncina', fish: 75 },
   { id: 'tocco', slot: 'testa', label: 'Tocco da laurea', fish: 100 },
-  { id: 'agrifoglio', slot: 'testa', label: 'Rametto di agrifoglio', fish: 35, xmas: true },
   { id: 'fascia', slot: 'testa', label: 'Fascetta sportiva', fish: 42 },
-  { id: 'paraorecchie', slot: 'testa', label: 'Paraorecchie', fish: 58, xmas: true },
-  { id: 'corna', slot: 'testa', label: 'Corna da renna', fish: 80, xmas: true },
+  { id: 'paraorecchie', slot: 'testa', label: 'Paraorecchie', fish: 58 },
   { id: 'elmetto', slot: 'testa', label: 'Elmetto da cantiere', fish: 110 },
-  { id: 'elfo', slot: 'testa', label: 'Cappello da elfo', fish: 95, xmas: true },
-  { id: 'stella', slot: 'testa', label: "Stella dell'albero", fish: 130, xmas: true },
   { id: 'chef', slot: 'testa', label: 'Cappello da chef', fish: 150 },
   { id: 'cowboy', slot: 'testa', label: 'Cappello da cowboy', fish: 180 },
   { id: 'cilindro', slot: 'testa', label: 'Cilindro', fish: 220 },
@@ -148,11 +144,9 @@ export const COSMETICS = [
   { id: 'sole', slot: 'viso', label: 'Occhiali da sole', fish: 28 },
   { id: 'monocolo', slot: 'viso', label: 'Monocolo', fish: 55 },
   { id: 'baffi', slot: 'viso', label: 'Baffoni', fish: 38 },
-  { id: 'nasorosso', slot: 'viso', label: 'Naso rosso da renna', fish: 48, xmas: true },
   { id: 'benda', slot: 'viso', label: 'Benda da pirata', fish: 70 },
   { id: 'cuori', slot: 'viso', label: 'Occhiali a cuore', fish: 85 },
-  { id: 'maschera', slot: 'viso', label: 'Maschera da sci', fish: 140, xmas: true },
-  { id: 'barba', slot: 'viso', label: 'Barba bianca', fish: 120, xmas: true },
+  { id: 'maschera', slot: 'viso', label: 'Maschera da sci', fish: 140 },
   // Collo
   { id: 'sciarpa', slot: 'collo', label: 'Sciarpa', fish: 5 },
   { id: 'papillon', slot: 'collo', label: 'Papillon', fish: 10 },
@@ -161,8 +155,6 @@ export const COSMETICS = [
   { id: 'medaglia', slot: 'collo', label: "Medaglia d'oro", fish: 90 },
   { id: 'bandana', slot: 'collo', label: 'Bandana', fish: 33 },
   { id: 'cravatta', slot: 'collo', label: 'Cravatta', fish: 52 },
-  { id: 'sciarpaNatale', slot: 'collo', label: 'Sciarpa natalizia', fish: 62, xmas: true },
-  { id: 'lucine', slot: 'collo', label: 'Lucine di Natale', fish: 105, xmas: true },
   { id: 'collanafiori', slot: 'collo', label: 'Collana hawaiana', fish: 125 },
   { id: 'stetoscopio', slot: 'collo', label: 'Stetoscopio', fish: 200 },
   // In pinna
@@ -174,13 +166,9 @@ export const COSMETICS = [
   { id: 'rosa', slot: 'pinna', label: 'Rosa', fish: 65 },
   { id: 'righello', slot: 'pinna', label: 'Righello', fish: 24 },
   { id: 'pizza', slot: 'pinna', label: 'Fetta di pizza', fish: 27 },
-  { id: 'pallina', slot: 'pinna', label: 'Pallina di Natale', fish: 44, xmas: true },
   { id: 'caffe', slot: 'pinna', label: 'Caffè da asporto', fish: 36 },
-  { id: 'bastoncino', slot: 'pinna', label: 'Bastoncino di zucchero', fish: 54, xmas: true },
   { id: 'gelato', slot: 'pinna', label: 'Gelato', fish: 64 },
-  { id: 'regalo', slot: 'pinna', label: 'Pacchetto regalo', fish: 72, xmas: true },
   { id: 'calcolatrice', slot: 'pinna', label: 'Calcolatrice', fish: 78 },
-  { id: 'calza', slot: 'pinna', label: 'Calza della Befana', fish: 88, xmas: true },
   { id: 'orologio', slot: 'pinna', label: 'Orologio', fish: 100 },
   { id: 'microfono', slot: 'pinna', label: 'Microfono', fish: 115 },
   { id: 'ombrello', slot: 'pinna', label: 'Ombrello', fish: 135 },
@@ -188,11 +176,51 @@ export const COSMETICS = [
   { id: 'racchetta', slot: 'pinna', label: 'Racchetta da tennis', fish: 170 },
   { id: 'bacchetta', slot: 'pinna', label: 'Bacchetta magica', fish: 240 },
   { id: 'lanterna', slot: 'pinna', label: 'Lanterna', fish: 190 },
-  { id: 'pupazzo', slot: 'pinna', label: 'Pupazzo di neve', fish: 145, xmas: true },
   { id: 'chitarra', slot: 'pinna', label: 'Chitarra', fish: 300 },
-] as const satisfies readonly { id: string; slot: CosmeticKind; label: string; fish: number; xmas?: boolean }[];
+] as const satisfies readonly { id: string; slot: CosmeticKind; label: string; fish: number }[];
 
-export type CosmeticId = (typeof COSMETICS)[number]['id'];
+/**
+ * Cosmetici a tempo: si comprano solo durante il loro evento, con la valuta dell'evento
+ * (1 pomodoro fatto nel periodo = 1 moneta). Chi li compra li tiene per sempre.
+ */
+export const SEASONAL_COSMETICS = [
+  // Natale
+  { id: 'agrifoglio', slot: 'testa', label: 'Rametto di agrifoglio', event: 'natale', cost: 8, group: 'Natale' },
+  { id: 'pallina', slot: 'pinna', label: 'Pallina di Natale', event: 'natale', cost: 8, group: 'Natale' },
+  { id: 'bastoncino', slot: 'pinna', label: 'Bastoncino di zucchero', event: 'natale', cost: 10, group: 'Natale' },
+  { id: 'nasorosso', slot: 'viso', label: 'Naso rosso da renna', event: 'natale', cost: 12, group: 'Natale' },
+  { id: 'sciarpaNatale', slot: 'collo', label: 'Sciarpa natalizia', event: 'natale', cost: 15, group: 'Natale' },
+  { id: 'regalo', slot: 'pinna', label: 'Pacchetto regalo', event: 'natale', cost: 15, group: 'Natale' },
+  { id: 'corna', slot: 'testa', label: 'Corna da renna', event: 'natale', cost: 20, group: 'Natale' },
+  { id: 'elfo', slot: 'testa', label: 'Cappello da elfo', event: 'natale', cost: 22, group: 'Natale' },
+  { id: 'lucine', slot: 'collo', label: 'Lucine di Natale', event: 'natale', cost: 25, group: 'Natale' },
+  { id: 'stella', slot: 'testa', label: "Stella dell'albero", event: 'natale', cost: 28, group: 'Natale' },
+  { id: 'barba', slot: 'viso', label: 'Barba bianca', event: 'natale', cost: 30, group: 'Natale' },
+  { id: 'pupazzo', slot: 'pinna', label: 'Pupazzo di neve', event: 'natale', cost: 35, group: 'Natale' },
+  // Capodanno
+  { id: 'trombetta', slot: 'pinna', label: 'Trombetta di Capodanno', event: 'natale', cost: 6, group: 'Capodanno' },
+  { id: 'festa', slot: 'testa', label: 'Cappellino da festa', event: 'natale', cost: 10, group: 'Capodanno' },
+  { id: 'spumante', slot: 'pinna', label: 'Calice di spumante', event: 'natale', cost: 12, group: 'Capodanno' },
+  { id: 'anno', slot: 'viso', label: 'Occhiali del nuovo anno', event: 'natale', cost: 18, group: 'Capodanno' },
+  // Befana
+  { id: 'carbone', slot: 'pinna', label: 'Carbone dolce', event: 'natale', cost: 6, group: 'Befana' },
+  { id: 'calza', slot: 'pinna', label: 'Calza della Befana', event: 'natale', cost: 15, group: 'Befana' },
+  { id: 'befana', slot: 'testa', label: 'Fazzoletto della Befana', event: 'natale', cost: 18, group: 'Befana' },
+  { id: 'scopa', slot: 'pinna', label: 'Scopa della Befana', event: 'natale', cost: 25, group: 'Befana' },
+] as const satisfies readonly { id: string; slot: CosmeticKind; label: string; event: string; cost: number; group: string }[];
+
+export type SeasonalCosmetic = (typeof SEASONAL_COSMETICS)[number];
+export type CosmeticId = (typeof COSMETICS)[number]['id'] | SeasonalCosmetic['id'];
+
+/** Un cosmetico a tempo comprato: resta per sempre. */
+export interface OwnedCosmetic {
+  id: CosmeticId;
+  /** Edizione dell'evento, es. "natale-2026" */
+  event: string;
+  /** Monete spese (0 = regalato) */
+  paid: number;
+  at: number;
+}
 export type Cosmetics = Partial<Record<CosmeticSlot, CosmeticId>>;
 
 /** Vecchio campo a scelta singola (versioni precedenti). */
@@ -217,6 +245,8 @@ export interface Profile extends CloudFields {
   /** Vecchio campo (una sola scelta): usare `cosmetics` */
   accessory?: AccessoryId;
   cosmetics?: Cosmetics;
+  /** Cosmetici a tempo comprati durante gli eventi */
+  owned?: OwnedCosmetic[];
   /** Se nel futuro: sta facendo un pomodoro fino a questo istante. */
   studyingUntil?: number;
   studyingSubject?: string;

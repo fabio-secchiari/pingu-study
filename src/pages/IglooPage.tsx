@@ -1,7 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLiveQuery, useObservable } from 'dexie-react-hooks';
 import { db } from '../db';
-import { COSMETICS, SLOT_LABELS, cosmeticsOf, kindOfSlot, uid, type CosmeticSlot, type Profile } from '../types';
+import {
+  COSMETICS,
+  SEASONAL_COSMETICS,
+  SLOT_LABELS,
+  cosmeticsOf,
+  kindOfSlot,
+  uid,
+  type CosmeticSlot,
+  type Profile,
+} from '../types';
+import EventShop, { EventBanner } from '../components/EventShop';
+import { activeEvents, isSeasonal, ownedBadge } from '../lib/events';
 import Penguin from '../components/Penguin';
 import IglooStats from '../components/IglooStats';
 import {
@@ -82,7 +93,20 @@ export default function IglooPage() {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [slot, setSlot] = useState<CosmeticSlot>('testa');
+  const [slot, setSlot] = useState<CosmeticSlot | 'evento'>('testa');
+  const events = activeEvents();
+
+  // Chi indossava già un cosmetico diventato "a tempo" (versioni prima degli eventi) se lo tiene
+  useEffect(() => {
+    if (!mine) return;
+    const worn = Object.values(cosmeticsOf(mine)).filter((id) => isSeasonal(id) && !mine.owned?.some((o) => o.id === id));
+    if (worn.length === 0) return;
+    const now = new Date();
+    const event = `natale-${now.getMonth() >= 10 ? now.getFullYear() : now.getFullYear() - 1}`;
+    db.profiles.update(mine.id, {
+      owned: [...(mine.owned ?? []), ...worn.map((id) => ({ id: id!, event, paid: 0, at: Date.now() }))],
+    });
+  }, [mine]);
 
   const myFish = fishOf(sessions, me, igloo);
   const partnerFish = partner ? fishOf(sessions, partner.userId, igloo) : 0;
@@ -140,6 +164,8 @@ export default function IglooPage() {
           </div>
         </div>
       ))}
+
+      <EventBanner sessions={sessions} mine={mine} partner={partner} />
 
       {pendingInvites.map((inv: any) => (
         <div key={inv.id} className="p-4 rounded-3xl bg-white border-2 border-penguin-pink flex flex-wrap items-center gap-3">
@@ -309,11 +335,28 @@ export default function IglooPage() {
                     {SLOT_LABELS[k]}
                   </button>
                 ))}
+                {events.length > 0 && (
+                  <button
+                    onClick={() => setSlot('evento')}
+                    className={`px-3 py-1.5 rounded-full font-medium ${slot === 'evento' ? 'bg-white shadow-sm' : 'text-[#2f7a4a]'}`}
+                  >
+                    {events[0].def.emoji} Edizione limitata
+                  </button>
+                )}
               </div>
+              {slot === 'evento' ? (
+                <EventShop sessions={sessions} mine={mine} />
+              ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {[
-                  { id: undefined, label: 'Niente', fish: 0 },
-                  ...COSMETICS.filter((c) => c.slot === kindOfSlot(slot)).sort((a, b) => a.fish - b.fish),
+                  { id: undefined, label: 'Niente', fish: 0, badge: '' },
+                  ...COSMETICS.filter((c) => c.slot === kindOfSlot(slot))
+                    .sort((a, b) => a.fish - b.fish)
+                    .map((c) => ({ id: c.id, label: c.label, fish: c.fish, badge: '' })),
+                  // I cosmetici a tempo comprati restano indossabili tutto l'anno
+                  ...SEASONAL_COSMETICS.filter((c) => c.slot === kindOfSlot(slot))
+                    .map((c) => ({ id: c.id, label: c.label, fish: 0, badge: ownedBadge(mine.owned?.find((o) => o.id === c.id)) }))
+                    .filter((c) => c.badge),
                 ].map((c) => {
                   const current = cosmeticsOf(mine);
                   const locked = myFish < c.fish;
@@ -330,13 +373,14 @@ export default function IglooPage() {
                       <Penguin color={mine.color} cosmetics={{ [slot]: c.id }} className="w-10 h-12 mx-auto" />
                       <span className="block text-[11px] leading-tight mt-1">
                         {c.label}
-                        {'xmas' in c && c.xmas && <span title="Natalizio"> 🎄</span>}
                       </span>
+                      {c.badge && <span className="block text-[10px] text-[#2f7a4a]">{c.badge}</span>}
                       {locked && <span className="block text-[10px] text-ink/60">🔒 {c.fish} 🐟</span>}
                     </button>
                   );
                 })}
               </div>
+              )}
             </>
           )}
         </section>
