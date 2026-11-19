@@ -173,7 +173,17 @@ export const SNIPPETS: Snip[] = [
   { trigger: '**', body: '\\cdot', where: 'math' },
   { trigger: '...', body: '\\dots', where: 'math' },
   { trigger: '->', body: '\\to', where: 'math' },
+  { trigger: '-->', body: '\\longrightarrow', where: 'math' },
+  { trigger: '<->', body: '\\leftrightarrow', where: 'math' },
+  { trigger: '<--', body: '\\longleftarrow', where: 'math' },
+  { trigger: '\\longleftarrow >', body: '\\longleftrightarrow', where: 'math' }, // <-->
+  { trigger: '|->', body: '\\mapsto', where: 'math' },
   { trigger: '=>', body: '\\implies', where: 'math' },
+  { trigger: '==>', body: '\\Longrightarrow', where: 'math' },
+  // "<=" diventa subito \leq, quindi le frecce che iniziano con "<=" partono da lì
+  { trigger: '\\leq >', body: '\\iff', where: 'math' }, // <=>
+  { trigger: '\\leq =', body: '\\Longleftarrow', where: 'math' }, // <==
+  { trigger: '\\Longleftarrow >', body: '\\Longleftrightarrow', where: 'math' }, // <==>
   { trigger: '<=>', body: '\\iff', where: 'math' },
   { trigger: '!=', body: '\\neq', where: 'math' },
   { trigger: '/=', body: '\\neq', where: 'math' },
@@ -210,12 +220,21 @@ const CMD_SYMBOLS = [
   'mp', 'circ', 'equiv', 'approx', 'simeq', 'cong', 'propto', 'perp', 'neq', 'leq', 'geq', 'implies',
   'impliedby', 'iff', 'to', 'mapsto', 'quad', 'qquad', 'ldots',
   'vdots', 'langle', 'rangle', 'lfloor', 'rfloor', 'lceil', 'rceil',
+  // frecce
+  'leftarrow', 'rightarrow', 'leftrightarrow', 'Leftarrow', 'Rightarrow', 'Leftrightarrow',
+  'longleftarrow', 'longrightarrow', 'longleftrightarrow', 'Longleftarrow', 'Longrightarrow',
+  'Longleftrightarrow', 'uparrow', 'downarrow', 'hookrightarrow', 'rightleftharpoons',
+  // altri simboli e operatori
+  'int', 'iint', 'iiint', 'oint', 'oplus', 'otimes', 'wedge', 'vee', 'neg', 'ell',
+  'hbar', 'aleph', 'bigcup', 'bigcap', 'mid', 'nmid', 'parallel', 'star',
+  'arg', 'deg', 'dim', 'gcd', 'sgn',
 ];
 const CMD_ONE_ARG = [
   'bar', 'tilde', 'widetilde', 'vec', 'dot', 'ddot', 'widehat', 'overline', 'underline', 'sqrt',
   'mathbb', 'mathcal', 'mathbf', 'mathrm', 'mathscr', 'mathfrak', 'operatorname', 'boxed',
+  'overrightarrow', 'underbrace', 'overbrace', 'cancel',
 ];
-const CMD_TWO_ARGS = ['frac', 'dfrac', 'binom'];
+const CMD_TWO_ARGS = ['frac', 'dfrac', 'tfrac', 'binom', 'overset', 'underset'];
 
 const taken = new Set(SNIPPETS.map((s) => s.trigger));
 for (const w of CMD_SYMBOLS)

@@ -4,6 +4,7 @@ import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/vi
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import katex from 'katex';
+import { katexOptions } from '../../lib/katexMacros';
 import Markdown from '../Markdown';
 import CheatSheet from '../CheatSheet';
 import {
@@ -52,7 +53,7 @@ const TOUCH_KEYS: { label: string; body: string }[] = [
 
 function renderKatex(src: string) {
   try {
-    return katex.renderToString(src, { throwOnError: false, strict: false, displayMode: false });
+    return katex.renderToString(src, katexOptions(false));
   } catch {
     return '';
   }

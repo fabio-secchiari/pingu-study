@@ -8,6 +8,7 @@ import 'katex/dist/katex.min.css';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../db';
 import { plain } from '../lib/text';
+import { KATEX_MACROS } from '../lib/katexMacros';
 
 /* ---------- plugin remark minimali (niente dipendenze extra) ---------- */
 
@@ -124,7 +125,9 @@ const components: Components = {
 };
 
 const remarkPlugins = [remarkGfm, remarkMath, remarkBreaks, remarkCallouts, remarkObsidianInline];
-const rehypePlugins: any[] = [[rehypeKatex, { throwOnError: false, strict: false }]];
+const rehypePlugins: any[] = [
+  [rehypeKatex, { throwOnError: false, strict: false, macros: { ...KATEX_MACROS } }],
+];
 
 const safeUrl = (url: string) =>
   /^(item:|https?:|mailto:|#)/i.test(url) ? url : '';
